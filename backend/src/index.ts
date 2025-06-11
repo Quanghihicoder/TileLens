@@ -4,6 +4,10 @@ import path from 'path';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import routes from './routes/routes';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const __dirname = path.resolve();
@@ -61,9 +65,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, './site/index.html'))
 });
 
+app.use('/api', routes);
+
 app.get('/assets/tiles/:z/:x/:y', (req: Request, res: Response) => {
   const { z, x, y } = req.params;
   const filePath = path.join(__dirname, 'assets', 'tiles', z, x, y);
+
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    sendError(req, res);
+  }
+});
+
+app.get('/assets/images/:filename', (req: Request, res: Response) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, 'assets', 'images', filename);
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);

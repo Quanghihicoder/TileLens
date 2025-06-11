@@ -28,3 +28,5 @@ Thumbs.db
 # Optional: if using tsx or temp build
 .cache/
 .out/
+
+assets/*

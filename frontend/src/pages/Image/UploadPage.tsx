@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, useRef, type ChangeEvent } from "react";
 import axios from "axios";
 
 interface ImageDimensions {
@@ -11,11 +11,17 @@ const PREVIEW_IMAGE_DESKTOP_MAX_SIZE = 300;
 
 const MOBILE_BREAK_POINT = 768; // md value in TailwindCSS
 
+const MAX_FILE_SIZE_MB = 50
+
+const apiUrl = import.meta.env.VITE_API_URL;
+
 const ImageUpload = () => {
   const [image, setImage] = useState<string | null>(null);
   const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // To resize preview image to avoid urly cropping
   const resizeImage = (imageDimensions: ImageDimensions) => {
@@ -33,16 +39,25 @@ const ImageUpload = () => {
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
+
     if (
       selected &&
       (selected.type === "image/png" || selected.type === "image/jpeg")
     ) {
+      const isTooLarge = selected.size > MAX_FILE_SIZE_MB * 1024 * 1024;
+      
+      if (isTooLarge) {
+        alert("File is too large. Maximum allowed size is 50MB.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+
       const img = new Image();
       const objectUrl = URL.createObjectURL(selected);
 
       img.onload = () => {
-        console.log("Width:", img.width);
-        console.log("Height:", img.height);
 
         setImageDimensions({
           width: img.width,
@@ -70,7 +85,7 @@ const ImageUpload = () => {
     formData.append("image", file);
 
     try {
-      const response = await axios.post("/api/upload", formData, {
+      const response = await axios.post(`${apiUrl}/image/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -78,6 +93,14 @@ const ImageUpload = () => {
 
       console.log("Uploaded image URL:", response.data.url);
       alert("Image uploaded successfully!");
+
+      setImage(null)
+      setImageDimensions(null)
+      setFile(null) 
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error("Error uploading:", error);
       alert("Failed to upload image.");
@@ -97,6 +120,7 @@ const ImageUpload = () => {
 
       <div className="flex flex-col items-center justify-center gap-4 p-4 border rounded-md shadow-md w-full max-w-md mx-auto bg-white">
         <input
+          ref={fileInputRef}
           type="file"
           accept="image/png, image/jpeg"
           onChange={handleImageChange}
