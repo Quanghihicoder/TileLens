@@ -7,6 +7,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
+      - ./frontend/.env:/app/.env  
       - /app/node_modules
     working_dir: /app
     command: npm run dev -- --host
@@ -24,3 +25,31 @@ services:
       - /app/node_modules
     working_dir: /app
     command: npm start
+    depends_on:
+      - mysql
+      - mongodb
+    env_file:
+      - ./backend/.env
+  
+  mysql:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tilelens
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mysql_data:
+  mongodb_data:
