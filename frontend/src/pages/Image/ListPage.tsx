@@ -11,12 +11,13 @@ interface Image {
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
+const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
 const ImageList = () => {
   const reduxUserId = useSelector((state: RootState) => state.user.id);
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string |null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const userId =
     reduxUserId ?? JSON.parse(localStorage.getItem("user") || "{}").id;
@@ -36,7 +37,7 @@ const ImageList = () => {
         });
 
         if (response?.data?.images) {
-          setImages(response.data.images);
+          setImages(response.data.images.reverse());
         }
       } catch (err: any) {
         setError(err.message || "Failed to fetch images");
@@ -46,14 +47,41 @@ const ImageList = () => {
     };
 
     fetchImages();
+
+    // const intervalId = setInterval(fetchImages, 10000); // fetch every 10 seconds
+
+    // return () => clearInterval(intervalId);
   }, [userId]);
 
-  if (loading) return <div className="text-center py-4 text-lg">Loading images...</div>;
+  const handleDelete = async (imageId: string) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+
+    try {
+      await axios.delete(`${apiUrl}/image/${userId}/${imageId}`, {
+        withCredentials: true,
+      });
+      setImages((prev) => prev.filter((img) => img.imageId !== imageId));
+    } catch (err: any) {
+      alert("Failed to delete image: " + (err.message || "Unknown error"));
+    }
+  };
+
+  const imgUrl = (userId: string, imageId: string, imageType: string): string =>
+    `${assetsUrl}/images/${userId}/${imageId}.${imageType}`;
+
+  if (loading)
+    return <div className="text-center py-4 text-lg">Loading images...</div>;
   if (error)
-    return <div className="text-red-500 text-center py-4 text-lg">Error: {error}</div>;
+    return (
+      <div className="text-red-500 text-center py-4 text-lg">
+        Error: {error}
+      </div>
+    );
   if (images.length === 0)
     return (
-      <div className="text-gray-500 text-center py-4 text-lg">No images found.</div>
+      <div className="text-gray-500 text-center py-4 text-lg">
+        No images found.
+      </div>
     );
 
   return (
@@ -65,9 +93,16 @@ const ImageList = () => {
         {images.map((img) => (
           <div
             key={img.imageId}
-            className="flex justify-between items-center rounded-2xl border border-gray-200 shadow-md bg-white p-6 transition hover:shadow-lg"
+            className="flex flex-col sm:flex-row justify-between items-center rounded-2xl border border-gray-200 shadow-md bg-white p-6 transition hover:shadow-lg"
           >
-            <div>
+             <img
+                src={imgUrl(userId, img.imageId, img.imageType)}
+                alt={`Preview of ${img.imageOriginalName}`}
+                crossOrigin="use-credentials"
+                className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
+              />
+
+            <div className="mb-4 sm:mb-0 sm:flex-1 w-full">
               <p className="text-gray-700">
                 <span className="font-semibold">Image ID:</span> {img.imageId}
               </p>
@@ -79,18 +114,26 @@ const ImageList = () => {
                 <span className="font-semibold">Type:</span> {img.imageType}
               </p>
             </div>
-            <div className="flex-shrink-0">
+            <div className="w-full sm:w-auto flex justify-center sm:justify-start space-x-0 sm:space-x-3">
               {img.processing ? (
-                <span className="inline-block text-sm font-medium text-gray-600 bg-gray-100 px-4 py-1 rounded-full">
+                <span className="inline-block text-sm font-medium text-gray-600 bg-gray-100 px-4 py-1 rounded-full text-center w-full sm:w-auto">
                   Processing...
                 </span>
               ) : (
-                <button
-                  className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow"
-                  onClick={() => alert(`View image ${img.imageId}`)}
-                >
-                  View
-                </button>
+                <div className="flex justify-center w-full sm:w-auto space-x-3">
+                  <button
+                    onClick={() => handleDelete(img.imageId)}
+                    className="text-sm font-medium text-white bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded-full shadow w-full sm:w-auto"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
+                    onClick={() => alert(`View image ${img.imageId}`)}
+                  >
+                    View
+                  </button>
+                </div>
               )}
             </div>
           </div>

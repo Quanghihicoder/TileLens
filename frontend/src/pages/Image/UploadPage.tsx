@@ -111,7 +111,7 @@ const ImageUpload = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center bg-gray-50 px-4">
+    <div className="pt-8 pb-12 flex flex-col items-center">
       <div className="mb-6 text-center">
         <p className="text-xl font-semibold text-gray-700">Upload an image</p>
         <p className="text-sm text-gray-500">
@@ -119,13 +119,16 @@ const ImageUpload = () => {
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-4 p-4 border rounded-md shadow-md w-full max-w-md mx-auto bg-white">
+      <div className="flex flex-col items-center justify-center gap-4 p-4 rounded-md border shadow-lg w-full max-w-md mx-auto bg-white">
         <input
           ref={fileInputRef}
           type="file"
           accept="image/png, image/jpeg"
           onChange={handleImageChange}
-          className="border p-2 rounded-md"
+          className="block w-full text-gray-700 file:mr-4 file:py-2 file:px-4
+                       file:rounded-md file:border-0 file:text-sm file:font-semibold
+                       file:bg-blue-600 file:text-white hover:file:bg-blue-700
+                       cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           disabled={loading}
         />
         <div
