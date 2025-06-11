@@ -8,6 +8,7 @@ import routes from './routes/routes';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { requireAuth, requireOwnData } from './middlewares/auth';
+import { connectMongo } from './db/mongo';
 
 dotenv.config();
 
@@ -109,7 +110,15 @@ app.use((req: Request, res: Response) => {
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-  console.log(`Open http://localhost:${PORT}/`);
-});
+
+(async () => {
+  try {
+    await connectMongo(); // 👈 Ensure MongoDB is connected first
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to connect to MongoDB:', err);
+    process.exit(1); 
+  }
+})();

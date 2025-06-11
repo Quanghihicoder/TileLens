@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { MulterError } from 'multer';
+import { createImage } from '../../models/imageModel';
 
 export const uploadImage = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -13,6 +14,12 @@ export const uploadImage = async (req: Request, res: Response): Promise<void> =>
       res.status(401).json({ success: false, message: 'Unauthorized: No user ID' });
       return;
     }
+
+    const imageId = req.file.filename.split('.')[0]; 
+    const imageType = req.file.filename.split('.')[1]; 
+    const imageOriginalName = req.file.originalname;
+
+    await createImage(user.id, imageId, imageOriginalName, imageType);
 
     const imageUrl = `/assets/images/${user.id}/${req.file.filename}`;
     res.status(200).json({

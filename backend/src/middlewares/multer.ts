@@ -2,6 +2,7 @@ import multer, { FileFilterCallback} from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
+import { nanoid } from 'nanoid';
 
 const MAX_FILE_SIZE_MB = 50
 
@@ -29,7 +30,9 @@ const storage = multer.diskStorage({
     cb(null, userUploadDir);
   },
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
+    const extension = path.extname(file.originalname); 
+    const id = nanoid(); 
+    const uniqueName = `${id}${extension.toLowerCase()}`; 
     cb(null, uniqueName);
   },
 });

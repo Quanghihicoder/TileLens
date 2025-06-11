@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home/HomePage";
+import ImageList from "./pages/Image/ListPage";
 import ImageView from "./pages/Image/ViewPage";
 import ImageUpload from "./pages/Image/UploadPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -36,7 +37,8 @@ const App = () => {
       <Route index element={<Home />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/image">
-          <Route index element={<ImageView />} />
+          <Route index element={<ImageList />} />
+          <Route path="view" element={<ImageView />} />
           <Route path="upload" element={<ImageUpload />} />
         </Route>
       </Route>
