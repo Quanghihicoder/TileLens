@@ -19,6 +19,8 @@ const MIN_TILE_LEVEL = 0;
 const MAX_TILE_LEVEL = 3;
 const BUFFER = 2;
 
+const assetsUrl = import.meta.env.VITE_ASSETS_URL;
+
 const ViewPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -223,7 +225,7 @@ const ViewPage = () => {
 
   // Generate tile URL
   const tileUrl = ({ z, x, y }: TileCoords): string =>
-    `http://localhost:8000/assets/tiles/${z}/${x}/${y}.jpg`;
+    `${assetsUrl}/tiles/${z}/${x}/${y}.jpg`;
 
   // GridDisplay component to show both transitioning and visible tiles
   const GridDisplay = ({
@@ -253,6 +255,7 @@ const ViewPage = () => {
               position: "absolute",
               opacity: 0.5, // Fade out effect
             }}
+            crossOrigin="use-credentials" 
           />
         ))}
 

@@ -1,15 +1,56 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react"; 
+import axios from "axios";
+import { useAppDispatch, useAppSelector } from '../../hooks';
+import { setUser } from '../../features/user/userSlice';
+import { useNavigate } from 'react-router-dom';
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Home = () => {
   const [username, setUsername] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
+  // If already logged in, redirect
+  const user = useAppSelector((state) => state.user);
+  useEffect(() => {
+    if (user.id && user.username) {
+      navigate('/image');
+    }
+  }, [user, navigate]);
+
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login submitted:", { username });
-
+  
     if (username.length == 0) {
-        setError("Please enter a username!")
+      setError("Please enter a username!")
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${apiUrl}/login`, {username}, {
+        withCredentials: true
+      });
+
+      if (response?.data?.user) {
+        const { id, username } = response.data.user;
+        dispatch(setUser({ id, username }));
+        
+        // Redirect to /image after login
+        navigate('/image');
+      }
+    } catch (error) {
+      console.error("Error login:", error);
+      alert("Failed to login.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,7 +84,7 @@ const Home = () => {
                 id="username"
                 name="username"
                 type="text"
-                // required
+                required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Enter your username or enter 'Test' for test user"
                 value={username}
@@ -54,6 +95,7 @@ const Home = () => {
 
           <div>
             <button
+              disabled={loading}
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >

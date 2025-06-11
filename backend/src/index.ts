@@ -6,6 +6,8 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import routes from './routes/routes';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import { requireAuth, requireOwnData } from './middlewares/auth';
 
 dotenv.config();
 
@@ -22,12 +24,14 @@ const corsOptions: cors.CorsOptions = {
       callback(null, false);
     }
   },
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(cookieParser());
 
 const sendError = (req: Request, res: Response): void => {
   res.status(404);
@@ -67,7 +71,7 @@ app.get('/', (req, res) => {
 
 app.use('/api', routes);
 
-app.get('/assets/tiles/:z/:x/:y', (req: Request, res: Response) => {
+app.get('/assets/tiles/:z/:x/:y', requireAuth, (req: Request, res: Response) => {
   const { z, x, y } = req.params;
   const filePath = path.join(__dirname, 'assets', 'tiles', z, x, y);
 
@@ -78,9 +82,20 @@ app.get('/assets/tiles/:z/:x/:y', (req: Request, res: Response) => {
   }
 });
 
-app.get('/assets/images/:filename', (req: Request, res: Response) => {
-  const { filename } = req.params;
-  const filePath = path.join(__dirname, 'assets', 'images', filename);
+// app.get('/assets/tiles/:userId/:filename/:z/:x/:y', requireAuth, requireOwnData, (req: Request, res: Response) => {
+//   const { userId, filename, z, x, y } = req.params;
+//   const filePath = path.join(__dirname, 'assets', 'tiles', userId, filename, z, x, y);
+
+//   if (fs.existsSync(filePath)) {
+//     res.sendFile(filePath);
+//   } else {
+//     sendError(req, res);
+//   }
+// });
+
+app.get('/assets/images/:userId/:filename', requireAuth, requireOwnData, (req: Request, res: Response) => {
+  const { userId, filename } = req.params;
+  const filePath = path.join(__dirname, 'assets', 'images', userId, filename);
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);

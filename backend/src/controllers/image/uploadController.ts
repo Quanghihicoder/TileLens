@@ -8,7 +8,13 @@ export const uploadImage = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const imageUrl = `/assets/images/${req.file.filename}`;
+    const user = (req as any).user;
+    if (!user?.id) {
+      res.status(401).json({ success: false, message: 'Unauthorized: No user ID' });
+      return;
+    }
+
+    const imageUrl = `/assets/images/${user.id}/${req.file.filename}`;
     res.status(200).json({
       success: true,
       message: 'Image uploaded successfully',

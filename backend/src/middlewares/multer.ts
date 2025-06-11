@@ -5,18 +5,30 @@ import { Request } from 'express';
 
 const MAX_FILE_SIZE_MB = 50
 
-const uploadDir = path.join(__dirname, '..', '..', 'assets', 'images');
+const baseUploadDir = path.join(__dirname, '..', '..', 'assets', 'images');
 
 // Ensure directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(baseUploadDir)) {
+  fs.mkdirSync(baseUploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (_req: Request, _file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    cb(null, uploadDir);
+  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+    const user = (req as any).user;
+    if (!user?.id) {
+      return cb(new Error('Unauthorized: Missing user ID'), '');
+    }
+
+    const userUploadDir = path.join(baseUploadDir, String(user.id));
+    
+    // Ensure user folder exists
+    if (!fs.existsSync(userUploadDir)) {
+      fs.mkdirSync(userUploadDir, { recursive: true });
+    }
+
+    cb(null, userUploadDir);
   },
-  filename: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     const uniqueName = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueName);
   },
