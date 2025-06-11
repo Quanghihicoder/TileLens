@@ -1,13 +1,22 @@
 FROM node:22
 
-WORKDIR /usr/src/app
+# Set working directory
+WORKDIR /app
 
+# Copy package files first for better caching
 COPY package*.json ./
 
-COPY . .
-
+# Install dependencies
 RUN npm install
 
-CMD ["npm", "start"]
+# Copy the rest of the application files
+COPY . .
 
+# Create .env from template
+RUN cp .env.template .env
+
+# Expose application port
 EXPOSE 8000
+
+# Default command
+CMD ["npm", "start"]
