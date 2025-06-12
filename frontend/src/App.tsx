@@ -9,6 +9,7 @@ import { setUser, clearUser } from "./features/user/userSlice";
 import { useEffect } from "react";
 import axios from "axios";
 import NavBar from "./components/NavBar";
+import NotFoundPage from "./pages/NotFound/NotFoundPage";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -46,7 +47,7 @@ const App = () => {
           </Route>
         </Route>
       </Route>
-      {/* <Route path="*" element={<ImageUpload />} /> */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };

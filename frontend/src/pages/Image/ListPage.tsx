@@ -51,23 +51,10 @@ const ImageList = () => {
 
     fetchImages();
 
-    // const intervalId = setInterval(fetchImages, 10000); // fetch every 10 seconds
+    const intervalId = setInterval(fetchImages, 5000); // fetch every 5 seconds
 
-    // return () => clearInterval(intervalId);
+    return () => clearInterval(intervalId);
   }, [userId]);
-
-  const handleDelete = async (imageId: string) => {
-    if (!confirm("Are you sure you want to delete this image?")) return;
-
-    try {
-      await axios.delete(`${apiUrl}/image/${userId}/${imageId}`, {
-        withCredentials: true,
-      });
-      setImages((prev) => prev.filter((img) => img.imageId !== imageId));
-    } catch (err: any) {
-      alert("Failed to delete image: " + (err.message || "Unknown error"));
-    }
-  };
 
   const imgUrl = (userId: string, imageId: string, imageType: string): string =>
     `${assetsUrl}/images/${userId}/${imageId}.${imageType}`;
@@ -124,12 +111,6 @@ const ImageList = () => {
                 </span>
               ) : (
                 <div className="flex justify-center w-full sm:w-auto space-x-3">
-                  <button
-                    onClick={() => handleDelete(img.imageId)}
-                    className="text-sm font-medium text-white bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded-full shadow w-full sm:w-auto"
-                  >
-                    Delete
-                  </button>
                   <button
                     className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
                     onClick={() => navigate(`/image/view/${img.imageId}`)}
