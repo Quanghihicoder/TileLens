@@ -32,35 +32,47 @@ const ImageList = () => {
       return;
     }
 
-    const fetchImages = async () => {
-      setLoading(true);
+    let isMounted = true;
+    setLoading(true);
+
+    const fetchAndCompareImages = async () => {
       try {
         const response = await axios.get(`${apiUrl}/image/${userId}`, {
           withCredentials: true,
         });
 
-        if (response?.data?.images) {
-          setImages(response.data.images.reverse());
+        const newImages = response?.data?.images?.reverse();
+
+        if (
+          isMounted &&
+          newImages &&
+          JSON.stringify(newImages) !== JSON.stringify(images)
+        ) {
+          setImages(newImages);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to fetch images");
+        if (isMounted) setError(err.message || "Failed to fetch images");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchImages();
+    fetchAndCompareImages();
+    const intervalId = setInterval(fetchAndCompareImages, 5000);
 
-    const intervalId = setInterval(fetchImages, 5000); // fetch every 5 seconds
-
-    return () => clearInterval(intervalId);
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, [userId]);
 
   const imgUrl = (userId: string, imageId: string, imageType: string): string =>
     `${assetsUrl}/images/${userId}/${imageId}.${imageType}`;
 
   if (loading)
-    return <div className="w-full text-center py-4 text-lg">Loading images...</div>;
+    return (
+      <div className="w-full text-center py-4 text-lg">Loading images...</div>
+    );
   if (error)
     return (
       <div className="w-full text-red-500 text-center py-4 text-lg">
