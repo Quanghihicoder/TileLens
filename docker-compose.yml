@@ -28,6 +28,7 @@ services:
     depends_on:
       - mysql
       - mongodb
+      - redis
     env_file:
       - ./backend/.env
   
@@ -49,6 +50,24 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  worker:
+    build: ./worker/tiling_image
+    volumes:
+      - ./backend/assets:/app/assets
+    depends_on:
+      - redis
+      - mongodb
+    command: npm start
+    deploy:
+      replicas: 1
+    env_file:
+      - ./worker/tiling_image/.env
 
 volumes:
   mysql_data:
