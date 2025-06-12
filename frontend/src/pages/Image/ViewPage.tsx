@@ -111,19 +111,46 @@ const heightOverflow = useMemo(() => {
   return levelHeight > windowContainer.clientHeight
 }, [levelHeight]);
 
-
 // Tile URL generator function
 const tileUrl = useCallback(({ z, x, y }: TileCoords): string => 
   `${assetsUrl}/tiles/${userId}/${imageId}/${z}/${x}/${y}.png`, 
   [userId, imageId]);
 
+
+ // Calculate the visible area in tile coordinates
+ const calculateVisibleArea = useCallback(() => {
+  const tilesContainer = tilesContainerRef.current;
+  if (!tilesContainer) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+
+  const containerWidth = tilesContainer.clientWidth;
+  const containerHeight = tilesContainer.clientHeight;
+
+  // Calculate visible area in pixels
+  const visibleLeft = -offset.x;
+  const visibleTop = -offset.y;
+  const visibleRight = visibleLeft + containerWidth;
+  const visibleBottom = visibleTop + containerHeight;
+
+  // Convert to tile coordinates with buffer
+  const minX = Math.max(0, Math.floor(visibleLeft / TILE_SIZE) - BUFFER);
+  const maxX = Math.min(maxNumberOfTilesX, Math.ceil(visibleRight / TILE_SIZE) + BUFFER);
+  const minY = Math.max(0, Math.floor(visibleTop / TILE_SIZE) - BUFFER);
+  const maxY = Math.min(maxNumberOfTilesY, Math.ceil(visibleBottom / TILE_SIZE) + BUFFER);
+
+  return { minX, maxX, minY, maxY };
+}, [offset, maxNumberOfTilesX, maxNumberOfTilesY]);
+
+
 const calculateVisibleTiles = useCallback(() => {
   const tilesContainer = tilesContainerRef.current;
   if (!tilesContainer) return [];
 
+  const { minX, maxX, minY, maxY } = calculateVisibleArea();
+
   const tiles: TileCoords[] = [];
-  for (let x = 0; x <= maxNumberOfTilesX; x++) {
-    for (let y = 0; y <= maxNumberOfTilesY; y++) {
+
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minY; y <= maxY; y++) {
       let width = undefined;
       let height = undefined;
       let top = 0;
@@ -168,7 +195,7 @@ const calculateVisibleTiles = useCallback(() => {
     }
   }
   return tiles;
-}, [zoom, maxNumberOfTilesX, maxNumberOfTilesY, levelHeight, levelWidth, overlaySpaceX, overlaySpaceY]);
+}, [zoom, calculateVisibleArea]);
 
 const clampOffset = useCallback((x: number, y: number) => {
   const tilesContainer = tilesContainerRef.current;
@@ -382,7 +409,7 @@ useEffect(() => {
               left: 0,
               top: 0,
               position: "absolute",
-              opacity: 1,
+              opacity: 1
             }}
             crossOrigin="use-credentials" 
           />
