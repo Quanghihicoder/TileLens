@@ -111,7 +111,7 @@ const ImageUpload = () => {
   };
 
   return (
-    <div className="pt-8 pb-12 flex flex-col items-center">
+    <div className="pt-8 pb-12 h-full w-full flex flex-col items-center">
       <div className="mb-6 text-center">
         <p className="text-xl font-semibold text-gray-700">Upload an image</p>
         <p className="text-sm text-gray-500">

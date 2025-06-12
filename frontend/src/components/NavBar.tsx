@@ -27,12 +27,12 @@ const NavBar = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen w-screen">
       <nav className="bg-blue-600 text-white p-4 shadow-md">
         <div className="container mx-auto flex flex-wrap items-center justify-between">
           {/* Left - App Name */}
           <div className="flex items-center flex-shrink-0 mr-4">
-            <h1 className="text-xl font-bold">My App</h1>
+            <h1 className="text-xl font-bold">TileLens</h1>
           </div>
 
           {/* Mobile Hamburger Button */}
@@ -85,7 +85,7 @@ const NavBar = () => {
             </div>
 
             {user.username && (
-              <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0">
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0 md:hidden">
                 <span className="font-semibold text-center md:text-left">
                   Hello, {user.username}
                 </span>
@@ -98,10 +98,24 @@ const NavBar = () => {
               </div>
             )}
           </div>
+
+          {user.username && (
+              <div className="flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0 hidden md:flex">
+                <span className="font-semibold text-center md:text-left">
+                  Hello, {user.username}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-blue-100 mt-2 md:mt-0"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
         </div>
       </nav>
 
-      <main className="flex-grow container mx-auto p-4">
+      <main className="flex w-full h-full">
         <Outlet />
       </main>
     </div>

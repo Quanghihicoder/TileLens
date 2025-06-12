@@ -41,7 +41,7 @@ const App = () => {
         <Route element={<NavBar />}>
           <Route path="/image">
             <Route index element={<ImageList />} />
-            <Route path="view" element={<ImageView />} />
+            <Route path="view/:imageId" element={<ImageView />} />
             <Route path="upload" element={<ImageUpload />} />
           </Route>
         </Route>

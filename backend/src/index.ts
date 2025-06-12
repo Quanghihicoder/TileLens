@@ -72,9 +72,9 @@ app.get('/', (req, res) => {
 
 app.use('/api', routes);
 
-app.get('/assets/tiles/:z/:x/:y', requireAuth, (req: Request, res: Response) => {
-  const { z, x, y } = req.params;
-  const filePath = path.join(__dirname, 'assets', 'tiles', z, x, y);
+app.get('/assets/tiles/:userId/:imageId/:z/:x/:y', requireAuth, requireOwnData, (req: Request, res: Response) => {
+  const { userId, imageId, z, x, y } = req.params;
+  const filePath = path.join(__dirname, 'assets', 'tiles', userId, imageId, z, x, y);
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);
@@ -82,17 +82,6 @@ app.get('/assets/tiles/:z/:x/:y', requireAuth, (req: Request, res: Response) => 
     sendError(req, res);
   }
 });
-
-// app.get('/assets/tiles/:userId/:filename/:z/:x/:y', requireAuth, requireOwnData, (req: Request, res: Response) => {
-//   const { userId, filename, z, x, y } = req.params;
-//   const filePath = path.join(__dirname, 'assets', 'tiles', userId, filename, z, x, y);
-
-//   if (fs.existsSync(filePath)) {
-//     res.sendFile(filePath);
-//   } else {
-//     sendError(req, res);
-//   }
-// });
 
 app.get('/assets/images/:userId/:filename', requireAuth, requireOwnData, (req: Request, res: Response) => {
   const { userId, filename } = req.params;

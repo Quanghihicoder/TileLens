@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { type RootState } from "../../app/store";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 interface Image {
@@ -18,6 +19,8 @@ const ImageList = () => {
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   const userId =
     reduxUserId ?? JSON.parse(localStorage.getItem("user") || "{}").id;
@@ -70,16 +73,16 @@ const ImageList = () => {
     `${assetsUrl}/images/${userId}/${imageId}.${imageType}`;
 
   if (loading)
-    return <div className="text-center py-4 text-lg">Loading images...</div>;
+    return <div className="w-full text-center py-4 text-lg">Loading images...</div>;
   if (error)
     return (
-      <div className="text-red-500 text-center py-4 text-lg">
+      <div className="w-full text-red-500 text-center py-4 text-lg">
         Error: {error}
       </div>
     );
   if (images.length === 0)
     return (
-      <div className="text-gray-500 text-center py-4 text-lg">
+      <div className="w-full text-gray-500 text-center py-4 text-lg">
         No images found.
       </div>
     );
@@ -95,12 +98,12 @@ const ImageList = () => {
             key={img.imageId}
             className="flex flex-col sm:flex-row justify-between items-center rounded-2xl border border-gray-200 shadow-md bg-white p-6 transition hover:shadow-lg"
           >
-             <img
-                src={imgUrl(userId, img.imageId, img.imageType)}
-                alt={`Preview of ${img.imageOriginalName}`}
-                crossOrigin="use-credentials"
-                className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
-              />
+            <img
+              src={imgUrl(userId, img.imageId, img.imageType)}
+              alt={`Preview of ${img.imageOriginalName}`}
+              crossOrigin="use-credentials"
+              className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
+            />
 
             <div className="mb-4 sm:mb-0 sm:flex-1 w-full">
               <p className="text-gray-700">
@@ -129,7 +132,7 @@ const ImageList = () => {
                   </button>
                   <button
                     className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
-                    onClick={() => alert(`View image ${img.imageId}`)}
+                    onClick={() => navigate(`/image/view/${img.imageId}`)}
                   >
                     View
                   </button>

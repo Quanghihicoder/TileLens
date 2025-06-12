@@ -59,7 +59,9 @@ async function updateImageDocument(
   userId: number,
   imageId: string,
   maxZoomLevel: number | null,
-  processing: boolean = false
+  processing: boolean = false,
+  width: number | null,
+  height: number | null,
 ) {
   if (!mongoClient) {
     throw new Error("MongoDB client is not connected");
@@ -74,6 +76,8 @@ async function updateImageDocument(
       $set: {
         processing,
         maxZoomLevel,
+        width,
+        height,
         processedAt: new Date(),
       },
     },
@@ -113,7 +117,7 @@ const imageWorker = new Worker("image-processing", async (job) => {
     await produceTiles(image, outputDir, MAX_TILE_DIMENSION_PIXELS);
     
     // Update MongoDB document after successful processing
-    await updateImageDocument(userId, imageId, maxZoomLevel, false);
+    await updateImageDocument(userId, imageId, maxZoomLevel, false, width, height);
 
     console.log(`[Job ${jobId}] Successfully processed image ${imageId}`);
     return { status: "success", userId, imageId, originalName, outputDir, maxZoomLevel };
@@ -123,7 +127,7 @@ const imageWorker = new Worker("image-processing", async (job) => {
     // Update MongoDB document to mark processing as failed
     try {
       if (mongoClient) {
-        await updateImageDocument(userId, imageId, null, true);
+        await updateImageDocument(userId, imageId, null, true, null, null);
       }
     } catch (mongoError) {
       console.error(`[Job ${jobId}] Failed to update MongoDB on error:`, mongoError);
