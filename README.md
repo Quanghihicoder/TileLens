@@ -27,3 +27,7 @@ How to terminate running db on host machine
 ## 2. docker-compose up --build
 
 Wait until backend is up!
+
+## 3. Clean
+
+`docker-compose down -v`
