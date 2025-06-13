@@ -53,24 +53,23 @@ const ImageUpload = () => {
         }
         return;
       }
-
       const img = new Image();
       const objectUrl = URL.createObjectURL(selected);
-
+    
       img.onload = () => {
-
+        setImage(objectUrl); // set only after load
         setImageDimensions({
           width: img.width,
           height: img.height,
         });
-
-        URL.revokeObjectURL(objectUrl); // free memory
+    
+        setTimeout(() => {
+          URL.revokeObjectURL(objectUrl);
+        }, 1000);
       };
-
+    
       img.src = objectUrl;
-
       setFile(selected);
-      setImage(objectUrl);
     } else {
       alert("Only PNG and JPG/JPEG files are allowed.");
     }
