@@ -1,5 +1,12 @@
 # STILL WRITING README
 
+Live Demo: http://3.25.191.70:5173/ 
+
+YouTube Demo: https://youtu.be/NzGQVEXd5Ko
+
+YouTube Install & Run Demo: https://youtu.be/aLDVqkwxHoc
+
+
 ## 1. Run ./environment_setup.sh
 
 Make sure 
