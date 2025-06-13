@@ -209,14 +209,16 @@ const ViewPage = () => {
           width = undefined;
           height = undefined;
           if (levelHeight < TILE_SIZE && levelWidth > TILE_SIZE) {
+            left = x * TILE_SIZE;
             if (x == maxNumberOfTilesX) {
-              left = x * TILE_SIZE - overlaySpaceX;
+              left -= overlaySpaceX;
             }
           }
 
           if (levelHeight > TILE_SIZE && levelWidth < TILE_SIZE) {
+            top = y * TILE_SIZE;
             if (y == maxNumberOfTilesY) {
-              top = y * TILE_SIZE - overlaySpaceY;
+              top -= overlaySpaceY;
             }
           }
         } else {
