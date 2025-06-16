@@ -7,7 +7,7 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - ./frontend/.env:/app/.env  
+      - ./frontend/.env:/app/.env
       - /app/node_modules
     working_dir: /app
     command: npm run dev -- --host
@@ -31,7 +31,7 @@ services:
       - redis
     env_file:
       - ./backend/.env
-  
+
   mysql:
     image: mysql:8
     restart: always
@@ -56,7 +56,7 @@ services:
     ports:
       - "6379:6379"
 
-  worker:
+  worker-tiling-image:
     build: ./worker/tiling_image
     volumes:
       - ./backend/assets:/app/assets
@@ -68,6 +68,19 @@ services:
       replicas: 1
     env_file:
       - ./worker/tiling_image/.env
+
+  worker-clipping-image:
+    build: ./worker/clipping_image
+    volumes:
+      - ./backend/assets:/app/assets
+    depends_on:
+      - redis
+      - mongodb
+    command: npm start
+    deploy:
+      replicas: 1
+    env_file:
+      - ./worker/clipping_image/.env
 
 volumes:
   mysql_data:

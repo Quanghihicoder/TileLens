@@ -20,6 +20,8 @@ type Offset = {
   y: number;
 };
 
+type Point = { x: number; y: number };
+
 const TILE_SIZE = 256;
 const MIN_TILE_LEVEL = 0;
 const BUFFER = 2;
@@ -61,6 +63,54 @@ const ViewPage = () => {
   const dragStartRef = useRef<Offset | null>(null);
   const offsetStartRef = useRef<Offset>({ x: 0, y: 0 });
   const prevOffsetRef = useRef<Offset>({ x: 0, y: 0 });
+
+  // Clipping state
+  const [isClipping, setIsClipping] = useState(false);
+  const [clippingPath, setClippingPath] = useState<Point[]>([]);
+  const [isSendingClipping, setIsSendingClipping] = useState(false);
+
+  function calculateDistance(p1: Point, p2: Point) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function angleWithYAxis(p1: Point, p2: Point) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const radians = Math.atan2(dx, dy);
+    const degrees = radians * (180 / Math.PI);
+    return degrees;
+  }
+
+  function isNear(p1: Point, p2: Point, threshold = 10): boolean {
+    return (
+      Math.abs(p1.x - p2.x) <= threshold && Math.abs(p1.y - p2.y) <= threshold
+    );
+  }
+
+  const canAddPoint = (paths: Point[], newPoint: Point): boolean => {
+    if (paths.length === 0) return true;
+    const last = paths[paths.length - 1];
+
+    if (isNear(last, newPoint)) return true;
+
+    return false;
+  };
+
+  // Calculate total of pixels from given points
+  function shoelaceArea(polygon: Point[]) {
+    const n = polygon.length;
+    let sum = 0;
+
+    for (let i = 0; i < n; i++) {
+      const { x: x1, y: y1 } = polygon[i];
+      const { x: x2, y: y2 } = polygon[(i + 1) % n];
+      sum += x1 * y2 - x2 * y1;
+    }
+
+    return Math.floor(Math.abs(sum) / 2);
+  }
 
   const getNumberOfLevelsForImage = useCallback(
     (width: number, height: number) => {
@@ -163,7 +213,7 @@ const ViewPage = () => {
 
   // Calculate the visible area in tile coordinates
   const calculateVisibleArea = useCallback(() => {
-    const tilesContainer = tilesContainerRef.current;
+    const tilesContainer = windowContainerRef.current;
     if (!tilesContainer) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
     const containerWidth = tilesContainer.clientWidth;
@@ -191,7 +241,7 @@ const ViewPage = () => {
   }, [offset, maxNumberOfTilesX, maxNumberOfTilesY]);
 
   const calculateVisibleTiles = useCallback(() => {
-    const tilesContainer = tilesContainerRef.current;
+    const tilesContainer = windowContainerRef.current;
     if (!tilesContainer) return [];
 
     const { minX, maxX, minY, maxY } = calculateVisibleArea();
@@ -250,7 +300,7 @@ const ViewPage = () => {
 
   const clampOffset = useCallback(
     (x: number, y: number) => {
-      const tilesContainer = tilesContainerRef.current;
+      const tilesContainer = windowContainerRef.current;
       if (!tilesContainer) return { x, y };
 
       const containerWidth = tilesContainer.clientWidth;
@@ -269,7 +319,7 @@ const ViewPage = () => {
   );
 
   const calculateOffsetAfterZoom = useCallback((): Offset | null => {
-    const tilesContainer = tilesContainerRef.current;
+    const tilesContainer = windowContainerRef.current;
     if (!tilesContainer) return null;
 
     const prevZoom = prevZoomRef.current;
@@ -295,14 +345,71 @@ const ViewPage = () => {
     return { x: newOffsetX, y: newOffsetY };
   }, [zoom]);
 
+  const calculateMousePosition = useCallback(
+    (e: React.MouseEvent) => {
+      const windowContainer = windowContainerRef.current;
+      const tilesContainer = tilesContainerRef.current;
+      if (!windowContainer) return;
+      if (!tilesContainer) return;
+
+      let x = 0;
+      let y = 0;
+
+      if (widthOverflow) {
+        x =
+          e.clientX -
+          windowContainer.getBoundingClientRect().left +
+          Math.abs(offset.x);
+      } else {
+        x = e.clientX - tilesContainer.getBoundingClientRect().left;
+      }
+
+      if (heightOverflow) {
+        y =
+          e.clientY -
+          windowContainer.getBoundingClientRect().top +
+          Math.abs(offset.y);
+      } else {
+        y = e.clientY - tilesContainer.getBoundingClientRect().top;
+      }
+
+      x = Math.floor(Math.min(Math.max(0, x), levelWidth));
+      y = Math.floor(Math.min(Math.max(0, y), levelHeight));
+
+      return { x, y };
+    },
+    [levelWidth, levelHeight, widthOverflow, heightOverflow, offset]
+  );
+
   const onMouseDown = (e: React.MouseEvent) => {
+    if (isSendingClipping) return;
+
     draggingRef.current = true;
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    offsetStartRef.current = { ...offset };
+
+    if (isClipping) {
+      const position = calculateMousePosition(e);
+      if (position) {
+        if (clippingPath.length == 0) {
+          setClippingPath((prev) => [...prev, position]);
+        } else {
+          const last = clippingPath[clippingPath.length - 1];
+          if (!isNear(last, position)) {
+            draggingRef.current = false;
+            alert(
+              "The starting point of the next line should be near the end of the previous line."
+            );
+          }
+        }
+      }
+    } else {
+      dragStartRef.current = { x: e.clientX, y: e.clientY };
+      offsetStartRef.current = { ...offset };
+    }
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
     if (!draggingRef.current || !dragStartRef.current) return;
+    if (isClipping) return;
 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
@@ -314,25 +421,43 @@ const ViewPage = () => {
 
     prevOffsetRef.current = clamped;
     setOffset(clamped);
-
-    // setVisibleTiles(calculateVisibleTiles());
   };
 
-  const onMouseUp = () => {
-    draggingRef.current = false;
-    dragStartRef.current = null;
-
-    // setVisibleTiles(calculateVisibleTiles());
+  const onMouseUp = (e: React.MouseEvent) => {
+    if (isClipping) {
+      const position = calculateMousePosition(e);
+      if (position) {
+        setClippingPath((prev) => [...prev, position]);
+      }
+      draggingRef.current = false;
+    } else {
+      draggingRef.current = false;
+      dragStartRef.current = null;
+    }
   };
 
-  const onMouseLeave = () => {
-    draggingRef.current = false;
-    dragStartRef.current = null;
+  const onMouseLeave = (e: React.MouseEvent) => {
+    if (isClipping && draggingRef.current) {
+      const position = calculateMousePosition(e);
+
+      if (position) {
+        setClippingPath((prev) => [...prev, position]);
+      }
+      draggingRef.current = false;
+    } else {
+      draggingRef.current = false;
+      dragStartRef.current = null;
+    }
   };
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
+
+      if (isClipping) {
+        alert("Can't zoom while clipping.");
+        return;
+      }
 
       const delta = Math.sign(e.deltaY);
       let newZoom = zoom;
@@ -348,8 +473,42 @@ const ViewPage = () => {
         setTimeout(() => setZoom(newZoom), 100);
       }
     },
-    [zoom, maxZoomLevel]
+    [zoom, maxZoomLevel, isClipping]
   );
+
+  const clipImage = async () => {
+    if (clippingPath.length < 3) {
+      alert("Invalid clipping shape");
+      return;
+    }
+
+    setIsSendingClipping(true);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/image/clip`,
+        {
+          imageId: imageId,
+          width: levelWidth,
+          height: levelHeight,
+          paths: clippingPath,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response) {
+        alert("Clip request sent successfully. Image will be in my images.");
+      }
+    } catch (err) {
+      console.error("Error clipping image:", err);
+    } finally {
+      setIsSendingClipping(false);
+      setClippingPath([]);
+      setIsClipping(!isClipping);
+    }
+  };
 
   // On Load
   useEffect(() => {
@@ -393,7 +552,7 @@ const ViewPage = () => {
 
   // Setup wheel event listener and handle zoom changes
   useEffect(() => {
-    const tilesContainer = tilesContainerRef.current;
+    const tilesContainer = windowContainerRef.current;
     if (!tilesContainer) return;
 
     tilesContainer.addEventListener("wheel", handleWheel, { passive: false });
@@ -422,13 +581,12 @@ const ViewPage = () => {
   }, [zoom]);
 
   // GridDisplay component to show both transitioning and visible tiles
-  const GridDisplay = ({
-    data,
-  }: {
-    data: TileCoords[];
-  }) => {
+  const GridDisplay = ({ data }: { data: TileCoords[] }) => {
     return (
-      <div style={{ width: levelWidth, height: levelHeight }}>
+      <div
+        style={{ width: levelWidth, height: levelHeight }}
+        className="bg-gray-200"
+      >
         {data.map((img) => (
           <img
             key={`${img.z}-${img.x}-${img.y}`}
@@ -456,17 +614,21 @@ const ViewPage = () => {
     <>
       <div className="flex-1 w-full relative overflow-hidden">
         <div className="h-full w-full flex items-center justify-center">
-          <div
-            ref={windowContainerRef}
-            className="h-full w-full max-w-[85vw] max-h-[90vh]"
-          >
+          <div className="h-full w-full max-w-[85vw] max-h-[90vh] z-10 ">
+            {isClipping && (
+              <div className="absolute text-sm bg-blue-100 p-1 rounded-full z-10 ">
+                A total of {shoelaceArea(clippingPath)} pixels selected.
+              </div>
+            )}
+
             <div
-              ref={tilesContainerRef}
+              ref={windowContainerRef}
               className={`h-full w-full overflow-hidden select-none no-scrollbar ${
                 !isTilesOverflow.x && "flex justify-center"
               } ${!isTilesOverflow.y && "flex items-center"} `}
             >
               <div
+                ref={tilesContainerRef}
                 className="transition-transform duration-100 ease-in-out"
                 style={{
                   cursor: draggingRef.current ? "grabbing" : "grab",
@@ -482,18 +644,94 @@ const ViewPage = () => {
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseLeave}
               >
-                <GridDisplay
-                  data={visibleTiles}
-                />
+                {clippingPath.map((point, i) => {
+                  if (
+                    i === clippingPath.length - 1 &&
+                    clippingPath.length === 2
+                  ) {
+                    return null;
+                  }
+
+                  const current = clippingPath[i];
+                  const next = clippingPath[(i + 1) % clippingPath.length];
+
+                  const length = calculateDistance(current, next);
+
+                  const rotate = -1 * angleWithYAxis(current, next);
+
+                  return (
+                    <div
+                      key={i}
+                      className="absolute z-20 origin-top-left"
+                      style={{
+                        left: `${current.x}px`,
+                        top: `${current.y}px`,
+                        width: 1.5,
+                        height: `${length}px`,
+                        transform: `rotate(${rotate}deg)`,
+                        background: `${
+                          i === clippingPath.length - 1 ? "blue" : "red"
+                        }`,
+                      }}
+                    ></div>
+                  );
+                })}
+
+                <GridDisplay data={visibleTiles} />
               </div>
             </div>
           </div>
 
+          {/* Clipping Buttons */}
+          <div className="fixed hidden bottom-6 left-2 md:left-6 z-10 md:flex flex-col gap-0 rounded-2xl">
+            {isClipping && (
+              <button
+                disabled={isSendingClipping}
+                className="px-2 pt-2 pb-1 bg-green-600 rounded-t-2xl"
+                onClick={async () => {
+                  await clipImage();
+                }}
+              >
+                <div
+                  className={`w-9 h-9 rounded-full bg-white shadow-md border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400 text-xl`}
+                >
+                  ✔️
+                </div>
+              </button>
+            )}
+
+            <button
+              disabled={isSendingClipping}
+              className={`px-2 ${
+                isClipping
+                  ? "pt-1 pb-2 bg-red-600 rounded-b-2xl"
+                  : "py-2 bg-blue-600 rounded-2xl"
+              }  `}
+              onClick={() => {
+                setClippingPath([]);
+                setIsClipping(!isClipping);
+              }}
+            >
+              <div
+                className={`w-9 h-9 rounded-full bg-white text-gray-800 shadow-md border border-gray-300 flex items-center justify-center text-2xl hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400 ${
+                  isClipping ? "text-xl" : "text-2xl"
+                }`}
+              >
+                {isClipping ? "❌" : "✂️"}
+              </div>
+            </button>
+          </div>
+
           {/* Zoom Buttons */}
-          <div className="fixed bottom-6 right-6 z-10 flex flex-col gap-2 p-2 rounded-2xl bg-blue-600">
+          <div className="fixed bottom-6 right-2 md:right-6 z-10 flex flex-col gap-2 p-2 rounded-2xl bg-blue-600">
             <button
               className="w-9 h-9 rounded-full bg-white text-gray-800 shadow-md border border-gray-300 flex items-center justify-center text-2xl hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400"
               onClick={() => {
+                if (isClipping) {
+                  alert("Can't zoom while clipping.");
+                  return;
+                }
+
                 if (zoom < maxZoomLevel) {
                   setTransitionZoom(zoom + 1);
                   setTimeout(() => setZoom(zoom + 1), 100);
@@ -505,6 +743,11 @@ const ViewPage = () => {
             <button
               className="w-9 h-9 rounded-full bg-white text-gray-800 shadow-md border border-gray-300 flex items-center justify-center text-2xl hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400"
               onClick={() => {
+                if (isClipping) {
+                  alert("Can't zoom while clipping.");
+                  return;
+                }
+
                 if (zoom > MIN_TILE_LEVEL) {
                   setTransitionZoom(zoom - 1);
                   setTimeout(() => setZoom(zoom - 1), 100);
