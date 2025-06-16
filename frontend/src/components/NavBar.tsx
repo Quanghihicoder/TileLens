@@ -100,18 +100,18 @@ const NavBar = () => {
           </div>
 
           {user.username && (
-              <div className="flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0 hidden md:flex">
-                <span className="font-semibold text-center md:text-left">
-                  Hello, {user.username}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-blue-100 mt-2 md:mt-0"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+            <div className="flex-col md:flex-row md:items-center md:space-x-4 mt-3 md:mt-0 hidden md:flex">
+              <span className="font-semibold text-center md:text-left">
+                Hello, {user.username}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="bg-white text-blue-600 px-3 py-1 rounded hover:bg-blue-100 mt-2 md:mt-0"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
