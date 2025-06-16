@@ -1,5 +1,5 @@
 import express from 'express';
-import { uploadImage } from '../controllers/image/uploadController';
+import { uploadClipped, uploadImage } from '../controllers/image/uploadController';
 import { getImagesByUser, getImage } from '../controllers/image/getController';
 import { login, logout, currentUser } from '../controllers/auth/authController'
 import { upload } from '../middlewares/multer';
@@ -17,5 +17,6 @@ router.post('/image/upload', requireAuth, upload.single('image'), uploadImage);
 router.get('/image/:userId', requireAuth, requireOwnData, getImagesByUser);
 router.get('/image/:userId/:imageId', requireAuth, requireOwnData, getImage);
 
+router.post('/image/clip', requireAuth, uploadClipped);
 
 export default router;

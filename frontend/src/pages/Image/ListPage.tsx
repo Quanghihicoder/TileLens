@@ -9,6 +9,7 @@ interface Image {
   imageOriginalName: string;
   imageType: string;
   processing: boolean;
+  isClipped: boolean;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -17,6 +18,7 @@ const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 const ImageList = () => {
   const reduxUserId = useSelector((state: RootState) => state.user.id);
   const [images, setImages] = useState<Image[]>([]);
+  const [filter, setFilter] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,52 +90,92 @@ const ImageList = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Your Uploaded Images
+      <h2 className="text-3xl font-bold mb-6 text-center">
+        Your
+        <button
+          className={`${
+            filter == 0 ? "text-blue-600 underline" : "text-gray-400"
+          } mx-2`}
+          onClick={() => {
+            setFilter(0);
+          }}
+        >
+          All
+        </button>
+        /
+        <button
+          className={`${
+            filter == 1 ? "text-blue-600 underline" : "text-gray-400"
+          } mx-2`}
+          onClick={() => {
+            setFilter(1);
+          }}
+        >
+          Uploaded
+        </button>
+        /
+        <button
+          className={`${
+            filter == 2 ? "text-blue-600 underline" : "text-gray-400"
+          } mx-2`}
+          onClick={() => {
+            setFilter(2);
+          }}
+        >
+          Clipped
+        </button>
+        Images
       </h2>
       <div className="grid grid-cols-1 gap-6">
-        {images.map((img) => (
-          <div
-            key={img.imageId}
-            className="flex flex-col sm:flex-row justify-between items-center rounded-2xl border border-gray-200 shadow-md bg-white p-6 transition hover:shadow-lg"
-          >
-            <img
-              src={imgUrl(userId, img.imageId, img.imageType)}
-              alt={`Preview of ${img.imageOriginalName}`}
-              crossOrigin="use-credentials"
-              className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
-            />
+        {images
+          .filter((img) => {
+            if (filter === 0) return true;
+            if (filter === 1) return img.isClipped === false;
+            if (filter === 2) return img.isClipped === true;
+            return true;
+          })
+          .map((img) => (
+            <div
+              key={img.imageId}
+              className="flex flex-col sm:flex-row justify-between items-center rounded-2xl border border-gray-200 shadow-md bg-white p-6 transition hover:shadow-lg"
+            >
+              <img
+                src={imgUrl(userId, img.imageId, img.imageType)}
+                alt={`Preview of ${img.imageOriginalName}`}
+                crossOrigin="use-credentials"
+                className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
+              />
 
-            <div className="mb-4 sm:mb-0 sm:flex-1 w-full">
-              <p className="text-gray-700">
-                <span className="font-semibold">Image ID:</span> {img.imageId}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-semibold">Original Name:</span>{" "}
-                {img.imageOriginalName}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-semibold">Type:</span> {img.imageType}
-              </p>
+              <div className="mb-4 sm:mb-0 sm:flex-1 w-full">
+                <p className="text-gray-700">
+                  <span className="font-semibold">Image ID:</span> {img.imageId}
+                </p>
+                <p className="text-gray-700 w-60">
+                  <span className="font-semibold">Original Name:</span>{" "}
+                  {img.imageOriginalName}
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-semibold">Type:</span> {img.imageType}
+                </p>
+              </div>
+              <div className="w-full sm:w-auto flex justify-center sm:justify-start space-x-0 sm:space-x-3">
+                {img.processing ? (
+                  <span className="inline-block text-sm font-medium text-gray-600 bg-gray-100 px-4 py-1 rounded-full text-center w-full sm:w-auto">
+                    Processing...
+                  </span>
+                ) : (
+                  <div className="flex justify-center w-full sm:w-auto space-x-3">
+                    <button
+                      className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
+                      onClick={() => navigate(`/image/view/${img.imageId}`)}
+                    >
+                      View
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="w-full sm:w-auto flex justify-center sm:justify-start space-x-0 sm:space-x-3">
-              {img.processing ? (
-                <span className="inline-block text-sm font-medium text-gray-600 bg-gray-100 px-4 py-1 rounded-full text-center w-full sm:w-auto">
-                  Processing...
-                </span>
-              ) : (
-                <div className="flex justify-center w-full sm:w-auto space-x-3">
-                  <button
-                    className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
-                    onClick={() => navigate(`/image/view/${img.imageId}`)}
-                  >
-                    View
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );

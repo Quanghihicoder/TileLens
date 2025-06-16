@@ -19,13 +19,14 @@ export const getImagesByUser = async (req: Request, res: Response) => {
 
 export const getImage = async (req: Request, res: Response) => {
   try {
-    const { imageId } = req.params;
-    const image = await getImageByImageId(imageId);
+    const { userId, imageId } = req.params;
+    const image = await getImageByImageId(Number(userId), imageId);
+
     if (!image) {
       res.status(404).json({ success: false, message: 'Image not found' });
       return; 
     }
-
+    
     res.status(200).json({ success: true, image });
   } catch (err) {
     console.error('Error fetching image by ID:', err);
