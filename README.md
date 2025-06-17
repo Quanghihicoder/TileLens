@@ -65,9 +65,14 @@ User Logs In -> Frontend Sends Username -> Backend Validates & Returns JWT
 
 ## Upload & Use
 
-User Uploads Image -> Backend Saves Image & Pushes Job to Redis
--> Worker Picks Job from Queue -> Worker Tiles & Saves Image
--> Worker Updates Mongo Metadata -> Frontend Fetches & Displays Processed Tiles
+User Uploads Image -> Backend Saves Image & Pushes Job to Tiling Queue
+-> Tiling Worker Picks Job from the Tiling Queue -> Tiling Worker Tiles & Saves Image
+-> Tiling Worker Updates Mongo Metadata -> Frontend Fetches & Displays Processed Tiles
+
+## Clip Image
+User Draw A Shape -> Call An API With (x,y) Points -> Init A Record In MongoDB -> Push To Clipping Queue
+-> Clipping Worker Picks Job From The Clipping Queue -> Clipping Worker Clips And Saves Image -> Push To Tiling Queue
+-> Same As Above 
 
 # 🧪 Useful Docker Commands
 
