@@ -39,7 +39,7 @@ Make sure Docker is installed
 - Smooth, accurate zooming (yes, I did the math)
 - Dynamic tiling rectangles
 - Handles image uploads, token auth, and renders only what’s needed
-- Allow users to clip images by drawing shapes.
+- Allow users to clip images by drawing shapes. All math, no library.
 
 ## Backend (Node + Express + Prisma + Mongo + MySQL)
 
@@ -52,7 +52,7 @@ Make sure Docker is installed
 ## Worker (Node.js Standalone)
 
 - Pulls image jobs from Redis queue
-- Does the actual image tiling (takes 20+ sec for big ones)
+- Does the actual image tiling and clipping (takes 20+ sec for big ones)
 - Saves tiles to /assets/tiles/{userId}/{imageId}/
 - Shared volume between backend and worker = instant availability
 - Updates Mongo with final width/height and marks as processing: false
@@ -82,11 +82,13 @@ List all running containers
 
 Enter backend container shell
 
-`docker exec -it tilelens_backend_1 sh`
+`docker exec -it tilelens-backend-1 sh`
+
+`docker exec -it tilelens-mysql-1 mysql -u root -p`
 
 # 🧠 Why This Design?
 
-- Tiling is heavy — offloaded to a dedicated worker
+- Tiling and clipping is heavy — offloaded to a dedicated worker
 - MongoDB is perfect for flexible image metadata (status, dimensions)
 - Frontend & backend don’t touch raw image data — the worker owns that flow
 - Shared volume keeps tile data immediately available post-processing
