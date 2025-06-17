@@ -7,7 +7,7 @@ Think Google Maps... but for your art, photos, or renders.
 # 🌐 Live Demo
 
 - App: http://3.105.210.13:5173/
-- Feature Demo: https://youtu.be/NzGQVEXd5Ko
+- Feature Demo: https://www.youtube.com/watch?v=ha4Pr96QHzM
 - Setup & Run Walkthrough: https://youtu.be/aLDVqkwxHoc
 
 # 🚀 TL;DR - How to Run
@@ -39,7 +39,7 @@ Make sure Docker is installed
 - Smooth, accurate zooming (yes, I did the math)
 - Dynamic tiling rectangles
 - Handles image uploads, token auth, and renders only what’s needed
-- Allow clipping image by user drawing shape
+- Allow users to clip images by drawing shapes.
 
 ## Backend (Node + Express + Prisma + Mongo + MySQL)
 
