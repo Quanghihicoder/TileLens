@@ -31,12 +31,37 @@ Make sure Docker is installed
 - Wait for backend to finish booting (localhost:8000)
 - Open http://localhost:5173 to start uploading and zooming!
 
+# Keywords
+
+ReactJS, Redux, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Docker, Terraform, AWS, JWT token, queue FIFO processing
+
+# For Propeller Recuiters
+
+“Cooked” all the tech assessments and combined them all into a single project 😄
+
+My application to the "history book" of the company 😄
+
+## Breakdown of the tech assessments:
+
++ Frontend challenge: Built the UI
++ Backend challenge: Created the tiling worker
++ Infrastructure challenge: Implemented JWT authentication
++ QA challenge: Figured out that using translate3d(x, y, 0) to grid-display images is the optimal solution
+
+## Bonus extras 😄:
+
+1. Merged everything into one cohesive app
+2. Integrated multiple databases: MySQL, NoSQL, and in-memory
+3. Added FIFO queue processing
+4. Containerized with Docker and deployed on AWS
+5. Included advanced image clipping — nothing less than what a top-tier candidate would show
+
 # 📦 Stack Breakdown
 
 ## Frontend (Vite + React + Tailwind)
 
 - Lazy loading tiles
-- Smooth, accurate zooming (yes, I did the math)
+- Smooth, accurate zooming (yes, I did the math). Use translate3d(x, y, 0) to grid-display images.
 - Dynamic tiling rectangles
 - Handles image uploads, token auth, and renders only what’s needed
 - Allow users to clip images by drawing shapes. All math, no library.
