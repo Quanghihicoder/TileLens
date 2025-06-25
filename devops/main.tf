@@ -363,13 +363,13 @@ resource "aws_db_instance" "tilelens_mysql" {
 resource "aws_sqs_queue" "tiling_queue" {
   name = "tiling-queue"
 
-  visibility_timeout_seconds = 65
+  visibility_timeout_seconds = 60 * 5 + 5
 }
 
 resource "aws_sqs_queue" "clipping_queue" {
   name = "clipping-queue"
 
-  visibility_timeout_seconds = 65
+  visibility_timeout_seconds = 60 * 2 + 5
 }
 
 #####################
@@ -465,7 +465,7 @@ resource "aws_lambda_function" "tiling_lambda" {
   source_code_hash = filebase64sha256("${path.module}/build/tiling_lambda.zip")
 
   memory_size = 1024
-  timeout     = 60
+  timeout     = 60 * 5
 
   environment {
     variables = {
@@ -495,7 +495,7 @@ resource "aws_lambda_function" "clipping_lambda" {
   source_code_hash = filebase64sha256("${path.module}/build/clipping_lambda.zip")
 
   memory_size = 1024
-  timeout     = 60
+  timeout     = 60 * 2
 
   environment {
     variables = {
