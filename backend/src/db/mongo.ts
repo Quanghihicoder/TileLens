@@ -1,19 +1,19 @@
 import { MongoClient, Db } from "mongodb";
 import dotenv from "dotenv";
-
 dotenv.config();
+
+const mongoURL = process.env.MONGO_URI
 
 let db: Db;
 
 export async function connectMongo() {
-  const uri = process.env.MONGO_URI;
+  const uri = mongoURL;
   const client = new MongoClient(uri!);
   await client.connect();
 
-  db = client.db(); // uses db from URI (e.g. mycustomdb)
+  db = client.db();
   console.log("Connected to MongoDB:", db.databaseName);
 
-  // Optional: Ensure indexes or initial collections
   await db.collection("logs").createIndex({ timestamp: 1 });
 }
 

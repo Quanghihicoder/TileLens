@@ -5,18 +5,18 @@ dotenv.config();
 
 const isProd = process.env.NODE_ENV === "production";
 const region = process.env.AWS_REGION || "ap-southeast-2"
-const queueURL = process.env.SQS_CLIPPING_QUEUE_URL!
+const queueURL = process.env.SQS_TILING_QUEUE_URL!
 const redisHost = process.env.REDIS_HOST || "redis"
 const redisPort = Number(process.env.REDIS_PORT) || 6379
 
-let clipQueue: any;
+let tileQueue: any;
 
 if (isProd) {
   const sqs = new SQSClient({
     region: region,
   });
 
-  clipQueue = {
+  tileQueue = {
     add: async (name: string, data: any) => {
       const command = new SendMessageCommand({
         QueueUrl: queueURL,
@@ -31,12 +31,12 @@ if (isProd) {
 } else {
   const connection = {
     host: redisHost,
-    port: redisPort
+    port: redisPort,
   };
 
-  const bullQueue = new BullQueue("image-clipping", { connection });
+  const bullQueue = new BullQueue("image-tiling", { connection });
 
-  clipQueue = {
+  tileQueue = {
     add: async (name: string, data: any) => {
       await bullQueue.add(name, data);
     },
@@ -44,4 +44,4 @@ if (isProd) {
   };
 }
 
-export default clipQueue;
+export default tileQueue;

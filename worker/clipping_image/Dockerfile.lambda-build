@@ -1,0 +1,22 @@
+FROM node:20 as builder
+
+# Install required tools (Debian-based)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3 \
+    git
+
+# Set work directory
+WORKDIR /var/task
+
+# Copy your project
+COPY . .
+
+# Install dependencies 
+RUN npm install
+
+# Build TypeScript
+RUN npm run build
+
+# Add node_modules
+RUN cp -r node_modules dist/node_modules

@@ -12,6 +12,7 @@ interface Image {
   isClipped: boolean;
 }
 
+const environment = import.meta.env.VITE_ENV;
 const apiUrl = import.meta.env.VITE_API_URL;
 const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
@@ -43,7 +44,10 @@ const ImageList = () => {
           withCredentials: true,
         });
 
-        const newImages = response?.data?.images?.reverse();
+        const newImages = [...(response?.data?.images || [])].sort(
+          (a, b) =>
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        );
 
         if (
           isMounted &&
@@ -142,7 +146,9 @@ const ImageList = () => {
               <img
                 src={imgUrl(userId, img.imageId, img.imageType)}
                 alt={`Preview of ${img.imageOriginalName}`}
-                crossOrigin="use-credentials"
+                crossOrigin={
+                  environment === "development" ? "use-credentials" : undefined
+                }
                 className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
               />
 

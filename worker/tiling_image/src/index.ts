@@ -6,20 +6,27 @@ import path from "path";
 import { Worker } from "bullmq";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
-
 dotenv.config();
 
-const connection = {
-  host: process.env.REDIS_HOST || "redis",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
-};
+const redisHost = process.env.REDIS_HOST || "redis"
+const redisPort = Number(process.env.REDIS_PORT) || 6379
+const mongoURL = process.env.MONGO_URI
+const worker_concurrency = Number(process.env.WORKER_CONCURRENCY) || 2
+const tableName = process.env.TABLE_NAME || "images";
+const imageDir = process.env.IMAGE_DIR || "/assets/images"
+const tileDir = process.env.TILE_DIR || "/assets/tiles"
 
 const MAX_TILE_DIMENSION_PIXELS = 256;
+
+const connection = {
+  host: redisHost,
+  port: redisPort,
+};
 
 const workerOptions = {
   connection,
   lockDuration: 60000,
-  concurrency: parseInt(process.env.WORKER_CONCURRENCY || "2"),
+  concurrency: worker_concurrency,
 };
 
 // MongoDB connection setup
@@ -28,7 +35,7 @@ const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 5000;
 
 async function connectMongo(retries = 0): Promise<void> {
-  const uri = process.env.MONGO_URI;
+  const uri = mongoURL;
   if (!uri) throw new Error("MONGO_URI not set");
 
   try {
@@ -44,16 +51,16 @@ async function connectMongo(retries = 0): Promise<void> {
       console.log("❌ MongoDB Disconnected. Attempting to reconnect...");
       connectMongo().catch(() => {}); // Silent retry
     });
-
   } catch (err) {
     if (retries < MAX_RETRIES) {
-      console.log(`Retrying MongoDB connection (${retries + 1}/${MAX_RETRIES})...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      console.log(
+        `Retrying MongoDB connection (${retries + 1}/${MAX_RETRIES})...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return connectMongo(retries + 1);
     }
   }
 }
-
 
 async function updateImageDocument(
   userId: number,
@@ -61,14 +68,14 @@ async function updateImageDocument(
   maxZoomLevel: number | null,
   processing: boolean = false,
   width: number | null,
-  height: number | null,
+  height: number | null
 ) {
   if (!mongoClient) {
     throw new Error("MongoDB client is not connected");
   }
 
   const db = mongoClient.db();
-  const collection = db.collection("images");
+  const collection = db.collection(tableName);
 
   await collection.updateOne(
     { userId, imageId },
@@ -85,68 +92,93 @@ async function updateImageDocument(
   );
 }
 
-const imageWorker = new Worker("image-processing", async (job) => {
-  const { userId, imageId, imageType, originalName } = job.data;
-  const jobId = job.id;
+const imageWorker = new Worker(
+  "image-tiling",
+  async (job) => {
+    const { userId, imageId, imageType, originalName } = job.data;
+    const jobId = job.id;
 
-  console.log(`[Job ${jobId}] Processing image ${imageId} for user ${userId}...`);
-  console.log(job.data)
+    console.log(
+      `[Job ${jobId}] Processing image ${imageId} for user ${userId}...`
+    );
+    console.log(job.data);
 
-  const __dirname = path.resolve();
-  
-  const inputPath = path.join(__dirname,
-  "/assets/images",
-    `${userId}`,
-    `${imageId}.${imageType}`
-  );
+    const __dirname = path.resolve();
 
-  const outputDir = path.join(__dirname,
-   "/assets/tiles", 
-    `${userId}`, 
-    `${imageId}`,
-  );
+    const inputPath = path.join(
+      __dirname,
+      `${imageDir}`,
+      `${userId}`,
+      `${imageId}.${imageType}`
+    );
 
-  try {
-    await fs.access(inputPath, fs.constants.R_OK);
-    await fs.ensureDir(outputDir);
+    const outputDir = path.join(
+      __dirname,
+      `${tileDir}`,
+      `${userId}`,
+      `${imageId}`
+    );
 
-    const image = await getImage(sharp(inputPath));
-    const { width, height } = image.properties;
-    const maxZoomLevel = Math.ceil(1 + Math.log10(Math.max(width, height)));
-
-    await produceTiles(image, outputDir, MAX_TILE_DIMENSION_PIXELS);
-    
-    // Update MongoDB document after successful processing
-    await updateImageDocument(userId, imageId, maxZoomLevel, false, width, height);
-
-    console.log(`[Job ${jobId}] Successfully processed image ${imageId}`);
-    return { status: "success", userId, imageId, originalName, outputDir, maxZoomLevel };
-  } catch (error) {
-    console.error(`[Job ${jobId}] Failed to process image ${imageId}:`, error);
-    
-    // Update MongoDB document to mark processing as failed
     try {
-      if (mongoClient) {
-        await updateImageDocument(userId, imageId, null, true, null, null);
+      await fs.access(inputPath, fs.constants.R_OK);
+      await fs.ensureDir(outputDir);
+
+      const image = await getImage(sharp(inputPath));
+      const { width, height } = image.properties;
+      const maxZoomLevel = Math.ceil(1 + Math.log10(Math.max(width, height)));
+
+      await produceTiles(image, outputDir, MAX_TILE_DIMENSION_PIXELS);
+
+      await updateImageDocument(
+        userId,
+        imageId,
+        maxZoomLevel,
+        false,
+        width,
+        height
+      );
+
+      console.log(`[Job ${jobId}] Successfully processed image ${imageId}`);
+      return {
+        status: "success",
+        userId,
+        imageId,
+        originalName,
+        outputDir,
+        maxZoomLevel,
+      };
+    } catch (error) {
+      console.error(
+        `[Job ${jobId}] Failed to process image ${imageId}:`,
+        error
+      );
+
+      try {
+        if (mongoClient) {
+          await updateImageDocument(userId, imageId, null, true, null, null);
+        }
+      } catch (mongoError) {
+        console.error(
+          `[Job ${jobId}] Failed to update MongoDB on error:`,
+          mongoError
+        );
       }
-    } catch (mongoError) {
-      console.error(`[Job ${jobId}] Failed to update MongoDB on error:`, mongoError);
-    }
-    
-    // Cleanup partial output on failure
-    try {
-      await fs.remove(outputDir);
-    } catch (cleanupError) {
-      console.error(`[Job ${jobId}] Cleanup failed:`, cleanupError);
-    }
-    
-    throw error;
-  }
-}, workerOptions);
 
+      // Cleanup partial output on failure
+      try {
+        await fs.remove(outputDir);
+      } catch (cleanupError) {
+        console.error(`[Job ${jobId}] Cleanup failed:`, cleanupError);
+      }
+
+      throw error;
+    }
+  },
+  workerOptions
+);
 
 // Initialize MongoDB connection when worker starts
-connectMongo().catch(err => {
+connectMongo().catch((err) => {
   console.error("Failed to connect to MongoDB:", err);
   process.exit(1);
 });

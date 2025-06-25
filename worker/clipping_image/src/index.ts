@@ -6,7 +6,6 @@ import { MongoClient } from "mongodb";
 import { createCanvas } from "canvas";
 import dotenv from "dotenv";
 import { getImagePath } from "./utilities";
-
 dotenv.config();
 
 type Point = { x: number; y: number };
@@ -18,12 +17,17 @@ type BoundingRect = {
   height: number;
 } | null;
 
+const redisHost = process.env.REDIS_HOST || "redis"
+const redisPort = Number(process.env.REDIS_PORT) || 6379
+const tableName = process.env.TABLE_NAME || "images";
+const imageDir = process.env.IMAGE_DIR || "/assets/images"
+
 const connection = {
-  host: process.env.REDIS_HOST || "redis",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
+  host: redisHost,
+  port: redisPort,
 };
 
-const imageQueue = new Queue("image-processing", { connection });
+const imageQueue = new Queue("image-tiling", { connection });
 
 const workerOptions = {
   connection,
@@ -74,7 +78,7 @@ async function updateImageDocument(
   }
 
   const db = mongoClient.db();
-  const collection = db.collection("images");
+  const collection = db.collection(tableName);
 
   await collection.updateOne(
     { userId, imageId },
@@ -100,7 +104,7 @@ async function getImageType(
     userId: number;
     imageId: string;
     imageType: string;
-  }>("images");
+  }>(tableName);
 
   const image = await collection.findOne(
     { userId, imageId },
@@ -161,12 +165,12 @@ const imageWorker = new Worker(
 
     const inputPath = path.join(
       __dirname,
-      "/assets/images",
+      `${imageDir}`,
       `${userId}`,
       `${originalImageId}.${imageType}`
     );
 
-    const outputDir = path.join(__dirname, "/assets/images", `${userId}`);
+    const outputDir = path.join(__dirname, `${imageDir}`, `${userId}`);
 
     try {
       await fs.access(inputPath, fs.constants.R_OK);
