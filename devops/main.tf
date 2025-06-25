@@ -464,7 +464,7 @@ resource "aws_lambda_function" "tiling_lambda" {
   filename         = "${path.module}/build/tiling_lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/build/tiling_lambda.zip")
 
-  memory_size = 1024
+  memory_size = 2048
   timeout     = 60 * 5
 
   environment {
