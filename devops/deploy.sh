@@ -19,6 +19,7 @@ cd ../tiling_image/
 ./build.sh
 
 cd ../../frontend
+npm install
 npm run build
 
 cd ../devops
