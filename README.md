@@ -45,8 +45,10 @@ VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets
 
 3. Deploy the infras
 
-`cd devops`
-`./deploy.sh`
+```
+cd devops
+./deploy.sh
+```
 
 # Keywords
 
