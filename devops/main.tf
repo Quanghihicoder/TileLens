@@ -93,6 +93,39 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
     key = "index.html"
   }
 }
+resource "aws_s3_bucket" "tilelens_alb_logs" {
+  bucket        = "tilelens-alb-logs"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_public_access_block" "tilelens_alb_logs" {
+  bucket = aws_s3_bucket.tilelens_alb_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "tilelens_alb_logs" {
+  bucket = aws_s3_bucket.tilelens_alb_logs.bucket
+  policy = data.aws_iam_policy_document.tilelens_alb_logs.json
+}
+
+data "aws_iam_policy_document" "tilelens_alb_logs" {
+  statement {
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.region_id}:root"]
+    }
+    actions = [
+      "s3:PutObject"
+    ]
+    resources = [
+      "${aws_s3_bucket.tilelens_alb_logs.arn}/*"
+    ]
+  }
+}
 
 ##########################
 # CloudFront Distributions
@@ -252,8 +285,13 @@ resource "aws_subnet" "private_b" {
   }
 }
 
-resource "aws_route_table_association" "public_assoc" {
+resource "aws_route_table_association" "public_assoc_a" {
   subnet_id      = aws_subnet.public_a.id
+  route_table_id = var.public_route_table_id
+}
+
+resource "aws_route_table_association" "public_assoc_b" {
+  subnet_id      = aws_subnet.public_b.id
   route_table_id = var.public_route_table_id
 }
 
@@ -299,7 +337,7 @@ resource "aws_security_group" "ecs_sg" {
     to_port         = 80
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
-    cidr_blocks     = ["0.0.0.0/0"]
+    # cidr_blocks     = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -307,7 +345,15 @@ resource "aws_security_group" "ecs_sg" {
     to_port         = 443
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
-    cidr_blocks     = ["0.0.0.0/0"]
+    # cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+    # cidr_blocks     = ["0.0.0.0/0"]
   }
 
   egress {
@@ -577,7 +623,7 @@ data "aws_ami" "ecs_ami" {
 
 resource "aws_instance" "tilelens_ecs_ec2" {
   ami                         = data.aws_ami.ecs_ami.id
-  instance_type               = "t3.micro"
+  instance_type               = "t2.small"
   subnet_id                   = aws_subnet.public_a.id
   iam_instance_profile        = aws_iam_instance_profile.tilelens_ecs_instance_profile.name
   associate_public_ip_address = true
@@ -673,14 +719,32 @@ resource "aws_ecs_task_definition" "tilelens_app_task" {
       image     = var.ecs_image_url,
       essential = true,
       environment = [
+        { name = "NODE_ENV", value = "production" },
+        { name = "PORT", value = "8000" },
+        { name = "JWT_SECRET", value = "tilelens" },
+        { name = "JWT_EXPIRES_IN", value = "3" },
+        { name = "IMAGE_DIR", value = "assets/images" },
+        { name = "TILE_DIR", value = "assets/tiles" },
+        { name = "BUCKET_NAME", value = "${local.s3_buckets.assets.name}" },
+        { name = "TABLE_NAME", value = "${aws_dynamodb_table.images_data.name}" },
+        { name = "ALLOW_ORIGIN", value = "https://tilelens.quangtechnologies.com" },
         {
           name  = "DATABASE_URL",
           value = "mysql://${var.db_username}:${var.db_password}@${aws_db_instance.tilelens_mysql.address}:3306/tilelens"
+        },
+        { name = "AWS_REGION", value = "${var.aws_region}" },
+        {
+          name  = "SQS_CLIPPING_QUEUE_URL",
+          value = "${aws_sqs_queue.clipping_queue.url}"
+        },
+        {
+          name  = "SQS_TILING_QUEUE_URL",
+          value = "${aws_sqs_queue.tiling_queue.url}"
         }
       ],
       portMappings = [{
         containerPort = 8000
-        hostPort      = 80
+        hostPort      = 8000
       }],
       logConfiguration = {
         logDriver = "awslogs",
@@ -695,18 +759,27 @@ resource "aws_ecs_task_definition" "tilelens_app_task" {
 }
 
 #####################
-# ECS
+# ALB
 #####################
 
 resource "aws_security_group" "alb_sg" {
   name        = "tilelens-alb-sg"
-  description = "Allow HTTPS inbound traffic"
+  description = "Allow inbound traffic"
   vpc_id      = var.vpc_id
 
+  # ingress {
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
+
+  # I don't know why, but it only works when all traffic is allowed.
+  # Edit the ECS security group instead.
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -751,18 +824,23 @@ resource "aws_lb" "alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+
+  access_logs {
+    bucket  = aws_s3_bucket.tilelens_alb_logs.bucket
+    enabled = true
+  }
 }
 
 # Target Group for ECS Service
 resource "aws_lb_target_group" "tilelens_tg" {
   name     = "tilelens-tg"
-  port     = 80
+  port     = 8000
   protocol = "HTTP"
   vpc_id   = var.vpc_id
 
   health_check {
     path                = "/"
-    interval            = 60
+    interval            = 30
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
@@ -775,7 +853,7 @@ resource "aws_lb_listener" "https_listener" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate_validation.tilelens_cert_validation.certificate_arn
+  certificate_arn   = aws_acm_certificate.tilelens_cert.arn
 
   default_action {
     type             = "forward"
@@ -838,9 +916,5 @@ resource "aws_route53_record" "api_tilelens" {
   }
 }
 
-resource "aws_lb_target_group_attachment" "tilelens_tg_attachment" {
-  target_group_arn = aws_lb_target_group.tilelens_tg.arn
-  target_id        = aws_instance.tilelens_ecs_ec2.id
-  port             = 80
-}
+
 

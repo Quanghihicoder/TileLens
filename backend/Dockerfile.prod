@@ -8,7 +8,7 @@ COPY package*.json tsconfig.json ./
 
 # Copy the rest of the application files
 COPY . .
-COPY .env.production .env
+# COPY .env.production .env
 COPY entrypointprod.sh ./entrypointprod.sh
 
 # Install dependencies and compile TypeScript
