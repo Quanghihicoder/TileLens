@@ -6,11 +6,11 @@ Think Google Maps... but for your art, photos, or renders.
 
 # 🌐 Live Demo
 
-- App: http://3.105.210.13:5173/
+- App: https://tilelens.quangtechnologies.com
 - Feature Demo: https://www.youtube.com/watch?v=ha4Pr96QHzM
 - Setup & Run Walkthrough: https://youtu.be/aLDVqkwxHoc
 
-# 🚀 TL;DR - How to Run
+# 🚀 TL;DR - How to Run Locally - A Single Container
 
 ## Pre-check 
 
@@ -18,7 +18,7 @@ Free up these ports on your system:
 3306 (MySQL), 6379 (Redis), 27017 (MongoDB), 8000 (Backend), 5173 (Frontend)
 Make sure Docker is installed
 
-## RUN
+## RUN 
 
 1. Run the setup script
 
@@ -31,9 +31,26 @@ Make sure Docker is installed
 - Wait for backend to finish booting (localhost:8000)
 - Open http://localhost:5173 to start uploading and zooming!
 
+# 🚀 TL;DR - How to Run Cloud Native - AWS
+
+1. Add frontend .env.production
+
+`VITE_ENV=production
+VITE_API_URL=https://api.tilelens.quangtechnologies.com/api
+VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets`
+
+2. Add required terraform variables in devops/terraform.tfvars
+
+3. Deploy the infras
+
+`cd devops`
+`./deploy.sh`
+
 # Keywords
 
 ReactJS, Redux, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Docker, Terraform, AWS, JWT token, queue FIFO processing
+
+AWS Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), RDS (MySQL), DynamoDB
 
 # For Propeller Recuiters
 
@@ -55,6 +72,7 @@ My application to the "history book" of the company 😄
 3. Added FIFO queue processing
 4. Containerized with Docker and deployed on AWS
 5. Included advanced image clipping — nothing less than what a top-tier candidate would show
+6. Cloud Native solution
 
 # 📦 Stack Breakdown
 
@@ -81,6 +99,16 @@ My application to the "history book" of the company 😄
 - Saves tiles to /assets/tiles/{userId}/{imageId}/
 - Shared volume between backend and worker = instant availability
 - Updates Mongo with final width/height and marks as processing: false
+
+## Cloud Native AWS
+
+- Standalone Node.js Workers -> AWS Lambda
+- BullMQ (Redis) -> Amazon SQS
+- Frontend -> S3 + CloudFront
+- Assets Disk Storage -> S3 + CloudFront
+- Backend -> ALB + ECS (EC2)
+- MySQL -> Amazon RDS (MySQL)
+- MongoDB -> Amazon DynamoDB
 
 # 🔁 System Flow
 
