@@ -35,9 +35,11 @@ Make sure Docker is installed
 
 1. Add frontend .env.production
 
-`VITE_ENV=production
+```
+VITE_ENV=production
 VITE_API_URL=https://api.tilelens.quangtechnologies.com/api
-VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets`
+VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets
+```
 
 2. Add required terraform variables in devops/terraform.tfvars
 
