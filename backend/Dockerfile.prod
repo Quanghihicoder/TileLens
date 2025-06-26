@@ -1,0 +1,31 @@
+FROM node:22
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package*.json tsconfig.json ./
+
+# Copy the rest of the application files
+COPY . .
+# COPY .env.production .env
+COPY entrypointprod.sh ./entrypointprod.sh
+
+# Install dependencies and compile TypeScript
+RUN npm install
+# RUN npm run build
+
+# Set executable permissions for entrypoint
+RUN chmod +x entrypointprod.sh
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Expose application port
+EXPOSE 8000
+
+# Set entrypoint
+ENTRYPOINT ["./entrypointprod.sh"]
+
+# Default command
+CMD ["npm", "start"]

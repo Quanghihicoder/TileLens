@@ -1,9 +1,15 @@
 import { Request, Response } from "express";
 import { MulterError } from "multer";
-import { createClippedImage, createImage } from "../../models/imageModel";
-import imageQueue from "../../queues/imageQueue";
+import { createClippedImage, createImage } from "../../models/image";
+import tileQueue from "../../queues/tileQueue";
 import clipQueue from "../../queues/clipQueue";
+import path from "path";
 import { nanoid } from 'nanoid';
+import dotenv from "dotenv";
+dotenv.config();
+
+const imageDir = process.env.IMAGE_DIR || "/assets/images"
+const environment = process.env.NODE_ENV || "development"
 
 export const uploadImage = async (
   req: Request,
@@ -23,20 +29,43 @@ export const uploadImage = async (
       return;
     }
 
-    const { originalname, filename } = req.file;
-    const [imageId, ...extensionParts] = filename.split(".");
-    const imageType = extensionParts.join("."); // handle case image.ff.png
+    let imageId: string;
+    let imageType: string;
+    let originalname: string;
 
+    if (environment === "development") {
+      const file = req.file as Express.Multer.File;
+      if (!file?.filename || !file?.originalname) {
+        throw new Error("Invalid file data in development mode");
+      }
+    
+      originalname = file.originalname;
+      const [id, ...extParts] = file.filename.split(".");
+      imageId = id;
+      imageType = extParts.join(".");
+    } else {
+      const file = req.file as any;
+      if (!file?.key || !file?.originalname) {
+        throw new Error("Invalid file data in production mode");
+      }
+    
+      originalname = file.originalname;
+      const baseFilename = path.basename(file.key);
+      const [id, ...extParts] = baseFilename.split(".");
+      imageId = id;
+      imageType = extParts.join(".");
+    }
+   
     await createImage(user.id, imageId, originalname, imageType);
 
-    await imageQueue.add("process-image", {
+    await tileQueue.add("tile-image", {
       userId: user.id,
       imageId,
       imageType,
       originalName: originalname,
     });
 
-    const imageUrl = `/assets/images/${user.id}/${req.file.filename}`;
+    const imageUrl = `${imageDir}/${user.id}/${req.file.filename}`;
     res.status(200).json({
       success: true,
       message: "Image uploaded successfully",

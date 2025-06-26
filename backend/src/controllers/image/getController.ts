@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getImagesByUserId, getImageByImageId } from '../../models/imageModel';
+import { getImagesByUserId, getImageByImageId } from '../../models/image';
 
 export const getImagesByUser = async (req: Request, res: Response) => {
   try {

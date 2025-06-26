@@ -26,6 +26,7 @@ const TILE_SIZE = 256;
 const MIN_TILE_LEVEL = 0;
 const BUFFER = 2;
 
+const environment = import.meta.env.VITE_ENV;
 const apiUrl = import.meta.env.VITE_API_URL;
 const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
@@ -89,14 +90,14 @@ const ViewPage = () => {
     );
   }
 
-  const canAddPoint = (paths: Point[], newPoint: Point): boolean => {
-    if (paths.length === 0) return true;
-    const last = paths[paths.length - 1];
+  // const canAddPoint = (paths: Point[], newPoint: Point): boolean => {
+  //   if (paths.length === 0) return true;
+  //   const last = paths[paths.length - 1];
 
-    if (isNear(last, newPoint)) return true;
+  //   if (isNear(last, newPoint)) return true;
 
-    return false;
-  };
+  //   return false;
+  // };
 
   // Calculate total of pixels from given points
   function shoelaceArea(polygon: Point[]) {
@@ -603,7 +604,9 @@ const ViewPage = () => {
               position: "absolute",
               opacity: 1,
             }}
-            crossOrigin="use-credentials"
+            crossOrigin={
+              environment === "development" ? "use-credentials" : undefined
+            }
           />
         ))}
       </div>
@@ -652,7 +655,7 @@ const ViewPage = () => {
                     return null;
                   }
 
-                  const current = clippingPath[i];
+                  const current = point;
                   const next = clippingPath[(i + 1) % clippingPath.length];
 
                   const length = calculateDistance(current, next);

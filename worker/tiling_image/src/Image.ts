@@ -1,5 +1,4 @@
 import sharp from "sharp";
-
 export interface Image {
   // resizes an image to be 'inside' the bounding box of width and height, preserving dimensions.
   resize: (width: number, height: number) => Promise<Image>;
@@ -10,6 +9,7 @@ export interface Image {
     height: number
   ) => Promise<Image>;
   save: (path: string) => Promise<void>;
+  toBuffer: () => Promise<Buffer>;
   properties: { width: number; height: number };
 }
 export const getImage = async (image: sharp.Sharp): Promise<Image> => {
@@ -40,6 +40,9 @@ export const getImage = async (image: sharp.Sharp): Promise<Image> => {
       ),
     save: async (path: string) => {
       await raw.toFile(path);
+    },
+    toBuffer: async () => {
+      return raw.png().toBuffer();
     },
     properties: { width, height },
   };

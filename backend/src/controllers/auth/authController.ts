@@ -1,14 +1,24 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { findUserByUsername, findUserByUserId, createUser } from '../../models/userModel';
+import dotenv from "dotenv";
+dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '3d';
+const JWT_EXPIRES_IN = 60 * 60 * 24 * Number(process.env.JWT_EXPIRES_IN) || 60 * 60 * 24 * 3
+
+if (!JWT_SECRET) {
+  throw new Error("Missing JWT_SECRET");
+}
 
 const generateToken = (userId: number): string => {
-  return jwt.sign({ id: userId }, JWT_SECRET, {
+  const payload = { id: userId };
+
+  const options: SignOptions = {
     expiresIn: JWT_EXPIRES_IN,
-  });
+  };
+
+  return jwt.sign(payload, JWT_SECRET, options);
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -31,7 +41,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   // Store in httpOnly cookie
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
     maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
     sameSite: 'strict',
   });
@@ -42,7 +51,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const logout = (req: Request, res: Response) => {
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
   });
 
