@@ -4,7 +4,7 @@ import ImageList from "./pages/Image/ListPage";
 import ImageView from "./pages/Image/ViewPage";
 import ImageUpload from "./pages/Image/UploadPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { useAppDispatch } from "./hooks";
+import { useAppDispatch } from "./hooks/useRedux";
 import { setUser, clearUser } from "./features/user/userSlice";
 import { useEffect } from "react";
 import axios from "axios";

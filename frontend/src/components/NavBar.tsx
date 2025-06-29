@@ -1,4 +1,4 @@
-import { useAppSelector, useAppDispatch } from "../hooks";
+import { useAppSelector, useAppDispatch } from "../hooks/useRedux";
 import { clearUser } from "../features/user/userSlice";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";

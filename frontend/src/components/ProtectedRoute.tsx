@@ -1,6 +1,6 @@
-import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAppSelector } from '../hooks';
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAppSelector } from "../hooks/useRedux";
 
 const ProtectedRoute: React.FC = () => {
   const user = useAppSelector((state) => state.user);

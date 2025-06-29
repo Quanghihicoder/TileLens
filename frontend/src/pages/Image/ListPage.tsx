@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useAppSelector } from "../../hooks/useRedux";
 import { type RootState } from "../../app/store";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,7 +17,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
 const ImageList = () => {
-  const reduxUserId = useSelector((state: RootState) => state.user.id);
+  const reduxUserId = useAppSelector((state: RootState) => state.user.id);
   const [images, setImages] = useState<Image[]>([]);
   const [filter, setFilter] = useState(1);
   const [loading, setLoading] = useState(true);

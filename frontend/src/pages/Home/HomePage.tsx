@@ -1,8 +1,8 @@
-import { useState, useEffect, type FormEvent } from "react"; 
+import { useState, useEffect, type FormEvent } from "react";
 import axios from "axios";
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { setUser } from '../../features/user/userSlice';
-import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from "../../hooks/useRedux";
+import { setUser } from "../../features/user/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -18,16 +18,15 @@ const Home = () => {
   const user = useAppSelector((state) => state.user);
   useEffect(() => {
     if (user.id && user.username) {
-      navigate('/image');
+      navigate("/image");
     }
   }, [user, navigate]);
 
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     if (username.length == 0) {
-      setError("Please enter a username!")
+      setError("Please enter a username!");
       return;
     }
 
@@ -35,16 +34,20 @@ const Home = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${apiUrl}/login`, {username}, {
-        withCredentials: true
-      });
+      const response = await axios.post(
+        `${apiUrl}/login`,
+        { username },
+        {
+          withCredentials: true,
+        }
+      );
 
       if (response?.data?.user) {
         const { id, username } = response.data.user;
         dispatch(setUser({ id, username }));
-        
+
         // Redirect to /image after login
-        navigate('/image');
+        navigate("/image");
       }
     } catch (error) {
       console.error("Error login:", error);
@@ -67,12 +70,20 @@ const Home = () => {
           <p>Account Authentication</p>
           <p>- Remember your credentials for future logins.</p>
           <p>- New unique usernames will register as new accounts.</p>
-          <p>- If you sign in and see at least one image, you're likely viewing someone else's account. :D</p>
+          <p>
+            - If you sign in and see at least one image, you're likely viewing
+            someone else's account. :D
+          </p>
         </div>
 
-        {error && (<div className="absolute text-start text-red-600" style={{marginTop: -28}}>
-          <p>* {error}</p>
-        </div>)}
+        {error && (
+          <div
+            className="absolute text-start text-red-600"
+            style={{ marginTop: -28 }}
+          >
+            <p>* {error}</p>
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
