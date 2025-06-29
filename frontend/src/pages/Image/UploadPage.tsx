@@ -11,13 +11,14 @@ const PREVIEW_IMAGE_DESKTOP_MAX_SIZE = 300;
 
 const MOBILE_BREAK_POINT = 768; // md value in TailwindCSS
 
-const MAX_FILE_SIZE_MB = 50
+const MAX_FILE_SIZE_MB = 50;
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 const ImageUpload = () => {
   const [image, setImage] = useState<string | null>(null);
-  const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
+  const [imageDimensions, setImageDimensions] =
+    useState<ImageDimensions | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,29 +46,29 @@ const ImageUpload = () => {
       (selected.type === "image/png" || selected.type === "image/jpeg")
     ) {
       const isTooLarge = selected.size > MAX_FILE_SIZE_MB * 1024 * 1024;
-      
+
       if (isTooLarge) {
         alert("File is too large. Maximum allowed size is 50MB.");
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = "";
         }
         return;
       }
       const img = new Image();
       const objectUrl = URL.createObjectURL(selected);
-    
+
       img.onload = () => {
         setImage(objectUrl); // set only after load
         setImageDimensions({
           width: img.width,
           height: img.height,
         });
-    
+
         setTimeout(() => {
           URL.revokeObjectURL(objectUrl);
         }, 1000);
       };
-    
+
       img.src = objectUrl;
       setFile(selected);
     } else {
@@ -91,15 +92,14 @@ const ImageUpload = () => {
         },
       });
 
-      console.log("Uploaded image URL:", response.data.url);
       alert("Image uploaded successfully!");
 
-      setImage(null)
-      setImageDimensions(null)
-      setFile(null) 
+      setImage(null);
+      setImageDimensions(null);
+      setFile(null);
 
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } catch (error) {
       console.error("Error uploading:", error);
@@ -133,12 +133,16 @@ const ImageUpload = () => {
         <div
           className={`flex flex-col items-center justify-center`}
           style={{
-            width: `${window.screen.width > MOBILE_BREAK_POINT
-              ? PREVIEW_IMAGE_DESKTOP_MAX_SIZE
-              : PREVIEW_IMAGE_MOBILE_MAX_SIZE}px`,
-            height: `${window.screen.width > MOBILE_BREAK_POINT
-              ? PREVIEW_IMAGE_DESKTOP_MAX_SIZE
-              : PREVIEW_IMAGE_MOBILE_MAX_SIZE}px`,
+            width: `${
+              window.screen.width > MOBILE_BREAK_POINT
+                ? PREVIEW_IMAGE_DESKTOP_MAX_SIZE
+                : PREVIEW_IMAGE_MOBILE_MAX_SIZE
+            }px`,
+            height: `${
+              window.screen.width > MOBILE_BREAK_POINT
+                ? PREVIEW_IMAGE_DESKTOP_MAX_SIZE
+                : PREVIEW_IMAGE_MOBILE_MAX_SIZE
+            }px`,
           }}
         >
           {image && imageDimensions ? (
@@ -164,10 +168,11 @@ const ImageUpload = () => {
         <button
           onClick={handleUpload}
           disabled={!file || loading}
-          className={`px-4 py-2 rounded-md text-white w-full transition ${loading
+          className={`px-4 py-2 rounded-md text-white w-full transition ${
+            loading
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700"
-            }`}
+          }`}
         >
           {loading ? "Uploading..." : "Upload Image"}
         </button>
