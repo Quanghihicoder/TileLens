@@ -65,5 +65,5 @@ export const useImage = (
     return Math.ceil(levelHeightBefore / TILE_SIZE) - 1;
   }, [levelHeightBefore]);
 
-  return {levelWidth, levelHeight, maxNumberOfTilesX, maxNumberOfTilesY, maxNumberOfTilesXBefore, maxNumberOfTilesYBefore}
+  return {levelWidth, levelHeight, levelWidthBefore, levelHeightBefore, maxNumberOfTilesX, maxNumberOfTilesY, maxNumberOfTilesXBefore, maxNumberOfTilesYBefore}
 };

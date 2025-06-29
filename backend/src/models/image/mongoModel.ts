@@ -82,6 +82,7 @@ export async function getImageByImageIdMongo(userId: number, imageId: string): P
     .findOne({ userId, imageId }, {
       projection: {
         imageOriginalName: 1,
+        imageType: 1,
         processing: 1,
         maxZoomLevel: 1,
         width: 1,

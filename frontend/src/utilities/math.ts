@@ -28,6 +28,11 @@ export const angleWithYAxis = (p1: Point, p2: Point) => {
   return degrees;
 };
 
+export const calculateRelativeImageSize = (baseSize: number, originalWidth: number, originalHeight: number) => {
+  const ratio = originalWidth / originalHeight
+  return {width: ratio > 1 ? baseSize : Math.ceil(baseSize * ratio), height: ratio > 1 ? Math.ceil(baseSize / ratio) : baseSize } 
+}
+
 export const isNear = (p1: Point, p2: Point, threshold = 10): boolean => {
   return (
     Math.abs(p1.x - p2.x) <= threshold && Math.abs(p1.y - p2.y) <= threshold

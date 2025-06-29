@@ -99,6 +99,7 @@ export async function getImageByImageId(
       {
         projection: {
           imageOriginalName: 1,
+          imageType: 1,
           processing: 1,
           maxZoomLevel: 1,
           width: 1,

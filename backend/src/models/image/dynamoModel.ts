@@ -81,7 +81,7 @@ export async function getImageByImageIdDynamo(userId: number, imageId: string): 
     Key: {
       id: makeId(userId, imageId),
     },
-    ProjectionExpression: "imageOriginalName, processing, maxZoomLevel, width, height",
+    ProjectionExpression: "imageOriginalName, imageType, processing, maxZoomLevel, width, height",
   }));
   return res.Item ?? null;
 }

@@ -6,16 +6,32 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useImageMetadata } from "../../hooks/useImageMetadata";
 import { useImage } from "../../hooks/useImage";
 import { useAppSelector } from "../../hooks/useRedux";
-import { shoelaceArea, isNear, type Point } from "../../utilities/math";
+import {
+  shoelaceArea,
+  isNear,
+  type Point,
+  calculateRelativeImageSize,
+} from "../../utilities/math";
 import { GridDisplay } from "../../components/GridDisplay";
 import { ZoomControls } from "../../components/ZoomControls";
 import { ClippingControls } from "../../components/ClippingControls";
 import { ClippingOverlay } from "../../components/ClippingOverlay";
 import { useOffset, type Offset } from "../../hooks/useOffset";
 
-const MIN_TILE_LEVEL = 0;
+export type PastedImage = {
+  originalWidth: number;
+  originalHeight: number;
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+  imageId: string;
+  imageType: string;
+};
 
+const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;
+const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
 const ViewPage = () => {
   const { imageId } = useParams<{ imageId: string }>();
@@ -51,10 +67,17 @@ const ViewPage = () => {
   const [clippingPath, setClippingPath] = useState<Point[]>([]);
   const [isSendingClipping, setIsSendingClipping] = useState(false);
 
+  // Blending state
+  const [isHovered, setIsHovered] = useState(false);
+  const [pastedImages, setPastedImages] = useState<PastedImage[]>([]);
+  const mousePositionRef = useRef({ x: 0, y: 0 });
+
   // Image data
   const {
     levelWidth,
     levelHeight,
+    levelWidthBefore,
+    levelHeightBefore,
     maxNumberOfTilesX,
     maxNumberOfTilesY,
     maxNumberOfTilesXBefore,
@@ -75,6 +98,19 @@ const ViewPage = () => {
 
     return levelHeight > windowContainer.clientHeight;
   }, [levelHeight]);
+
+  const pastedImageBaseSize = useMemo(() => {
+    const windowContainer = windowContainerRef.current;
+    if (!windowContainer)
+      return Math.floor(Math.min(levelWidth, levelHeight) / 2);
+
+    return Math.floor(
+      Math.min(
+        Math.min(levelWidth, windowContainer.clientWidth),
+        Math.min(levelHeight, windowContainer.clientHeight)
+      ) / 2
+    );
+  }, [zoom, levelWidth, levelHeight]);
 
   const { offset, clampOffset, prevOffsetRef, setOffset } = useOffset(
     levelWidth,
@@ -126,6 +162,10 @@ const ViewPage = () => {
     [levelWidth, levelHeight, widthOverflow, heightOverflow, offset]
   );
 
+  const onMouseEnter = (e: React.MouseEvent) => {
+    setIsHovered(true);
+  };
+
   const onMouseDown = (e: React.MouseEvent) => {
     if (isSendingClipping) return;
 
@@ -153,6 +193,11 @@ const ViewPage = () => {
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
+    const position = calculateMousePosition(e);
+    if (position) {
+      mousePositionRef.current = position;
+    }
+
     if (!draggingRef.current || !dragStartRef.current) return;
     if (isClipping) return;
 
@@ -182,6 +227,8 @@ const ViewPage = () => {
   };
 
   const onMouseLeave = (e: React.MouseEvent) => {
+    setIsHovered(false);
+
     if (isClipping && draggingRef.current) {
       const position = calculateMousePosition(e);
 
@@ -220,6 +267,69 @@ const ViewPage = () => {
     },
     [zoom, maxZoomLevel, isClipping]
   );
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    if (pastedImages.length > 20) {
+      alert(
+        "You can only paste maximum 20 images. Save the image and then continue paste from there."
+      );
+      return;
+    }
+
+    try {
+      const pastedText = e.clipboardData.getData("text/plain");
+      const nanoidRegex = /^[A-Za-z0-9_-]{21}$/;
+
+      if (nanoidRegex.test(pastedText)) {
+        await getImage(pastedText);
+      } else {
+        alert("Invalid image to paste");
+      }
+    } catch (error) {
+      console.error("Error reading clipboard data:", error);
+    }
+  };
+
+  const getImage = async (pastedImageId: string) => {
+    try {
+      const response = await axios.get(
+        `${apiUrl}/image/${userId}/${pastedImageId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response) {
+        if (!response.data.image.processing) {
+          const relativeSize = calculateRelativeImageSize(
+            pastedImageBaseSize,
+            Number(response.data.image.width),
+            Number(response.data.image.height)
+          );
+
+          const pastedImage: PastedImage = {
+            originalWidth: response.data.image.width,
+            originalHeight: response.data.image.height,
+            width: relativeSize.width,
+            height: relativeSize.height,
+            left: mousePositionRef.current!.x - relativeSize.width / 2,
+            top: mousePositionRef.current!.y - relativeSize.height / 2,
+            imageId: pastedImageId,
+            imageType: response.data.image.imageType,
+          };
+
+          setPastedImages((prevImages) => [...prevImages, pastedImage]);
+        } else {
+          alert("Invalid image to paste");
+        }
+      }
+    } catch (err) {
+      console.error("Error pasting image:", err);
+      alert("Invalid image to paste");
+    }
+  };
 
   const clipImage = async () => {
     if (clippingPath.length < 3) {
@@ -275,11 +385,36 @@ const ViewPage = () => {
     };
   }, [handleWheel]);
 
+  useEffect(() => {
+    let newPastedImages: PastedImage[] = [];
+
+    for (let i = 0; i < pastedImages.length; i++) {
+      let image = pastedImages[i];
+
+      if (levelWidthBefore) {
+        image.width = (image.width / levelWidthBefore) * levelWidth;
+        image.left = (image.left / levelWidthBefore) * levelWidth;
+      }
+
+      if (levelHeightBefore) {
+        image.height = (image.height / levelHeightBefore) * levelHeight;
+        image.top = (image.top / levelHeightBefore) * levelHeight;
+      }
+
+      newPastedImages.push(image);
+    }
+
+    setPastedImages(newPastedImages);
+  }, [zoom]);
+
+  const imageUrl = (pastedImageId: string, pastedImageType: string): string =>
+    `${assetsUrl}/images/${userId}/${pastedImageId}.${pastedImageType}`;
+
   return (
     <>
       <div className="flex-1 w-full relative overflow-hidden">
         <div className="h-full w-full flex items-center justify-center">
-          <div className="h-full w-full max-w-[85vw] max-h-[90vh] z-10 ">
+          <div className="h-full w-full max-w-[85vw] max-h-[90vh] z-10">
             {isClipping && (
               <div className="absolute text-sm bg-blue-100 p-1 rounded-full z-10 ">
                 A total of {shoelaceArea(clippingPath)} pixels selected.
@@ -304,11 +439,30 @@ const ViewPage = () => {
                   }`,
                 }}
                 onTransitionEnd={() => setTransitionZoom(null)}
+                onMouseEnter={onMouseEnter}
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseLeave}
+                onPaste={isHovered ? handlePaste : undefined}
+                tabIndex={0}
               >
+                {pastedImages.map((image, i) => {
+                  return (
+                    <img
+                      key={i}
+                      src={imageUrl(image.imageId, image.imageType)}
+                      className="absolute z-15"
+                      style={{
+                        left: `${image.left}px`,
+                        top: `${image.top}px`,
+                        width: `${image.width}px`,
+                        height: `${image.height}px`,
+                      }}
+                      draggable={false}
+                    />
+                  );
+                })}
                 <ClippingOverlay clippingPath={clippingPath} />
                 <GridDisplay
                   userId={userId}

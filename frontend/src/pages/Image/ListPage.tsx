@@ -93,7 +93,7 @@ const ImageList = () => {
     );
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="min-w-3xl max-w-4xl mx-auto p-6 ">
       <h2 className="text-3xl font-bold mb-6 text-center">
         Your
         <button
@@ -170,12 +170,21 @@ const ImageList = () => {
                     Processing...
                   </span>
                 ) : (
-                  <div className="flex justify-center w-full sm:w-auto space-x-3">
+                  <div className="flex flex-col items-center justify-center gap-2 w-full sm:w-auto">
                     <button
-                      className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
+                      className="text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 border-1 border-blue-600 px-5 py-1.5 rounded-full shadow w-full sm:w-auto"
                       onClick={() => navigate(`/image/view/${img.imageId}`)}
                     >
                       View
+                    </button>
+
+                    <button
+                      className="text-sm font-medium text-black px-5 py-1.5 border-1 rounded-full shadow w-full sm:w-auto  active:scale-95 transition-transform"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(img.imageId);
+                      }}
+                    >
+                      Copy
                     </button>
                   </div>
                 )}

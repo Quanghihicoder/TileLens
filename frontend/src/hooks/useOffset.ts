@@ -47,7 +47,7 @@ export const useOffset = (
     [levelWidth, levelHeight]
   );
 
-  const calculateOffsetAfterZoom = useCallback((): Offset | null => {
+  const calculateOffsetAfterZoom = useCallback((position: Offset): Offset | null => {
     const tilesContainer = containerRef.current;
     if (!tilesContainer) return null;
 
@@ -64,9 +64,9 @@ export const useOffset = (
 
     // New offset to keep the same world point centered
     const worldX =
-      (centerX - prevOffsetRef.current.x) / (maxNumberOfTilesXBefore + 1);
+      (centerX - position.x) / (maxNumberOfTilesXBefore + 1);
     const worldY =
-      (centerY - prevOffsetRef.current.y) / (maxNumberOfTilesYBefore + 1);
+      (centerY - position.y) / (maxNumberOfTilesYBefore + 1);
 
     const newOffsetX = centerX - worldX * (maxNumberOfTilesX + 1);
     const newOffsetY = centerY - worldY * (maxNumberOfTilesY + 1);
@@ -76,7 +76,7 @@ export const useOffset = (
 
   // Change offset after zoom
   useEffect(() => {
-    const calculatedOffset = calculateOffsetAfterZoom();
+    const calculatedOffset = calculateOffsetAfterZoom(prevOffsetRef.current);
     if (calculatedOffset) {
       let clamped = clampOffset(calculatedOffset.x, calculatedOffset.y);
 
