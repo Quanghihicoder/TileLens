@@ -1,20 +1,17 @@
-variable "key_name" {
-  description = "SSH key pair name for EC2 instance access"
+variable "aws_region" {
+  description = "AWS region"
   type        = string
 }
-
-variable "github_token" {
-  description = "Token for GitHub authentication"
+variable "region_id" {
+  description = "ID of the AWS Region"
   type        = string
 }
-
 variable "hosted_zone_id" {
-  description = "ID of the hosted zone"
+  description = "ID of the existing hosted zone"
   type        = string
 }
-
 variable "acm_certificate_arn" {
-  description = "Certificate for the domain"
+  description = "ARN of the existing cloudfront certificate for the domain (it must be in us-east-1)"
   type        = string
 }
 
@@ -29,42 +26,30 @@ variable "db_password" {
 }
 
 variable "vpc_id" {
-  description = "ID of the VPC"
+  description = "ID of existing the VPC"
   type        = string
 }
 
 variable "aza" {
-  description = "Availability Zone A"
+  description = "Availability Zone A of the AWS region"
   type        = string
 }
 
 variable "azb" {
-  description = "Availability Zone B"
+  description = "Availability Zone B of the AWS region"
+  type        = string
+}
+
+variable "public_route_table_id" {
+  description = "ID of the existing public route table"
   type        = string
 }
 
 variable "ecs_image_url" {
-  description = "Container Image URL"
-  type        = string
-
-}
-
-variable "public_route_table_id" {
-  description = "ID of the route table"
+  description = "Container Image URL in ECR"
   type        = string
 }
 
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
-}
 
-variable "account_id" {
-  description = "ID of the AWS Account"
-  type        = string
-}
 
-variable "region_id" {
-  description = "ID of the AWS Region"
-  type        = string
-}
+
