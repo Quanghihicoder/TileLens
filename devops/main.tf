@@ -178,13 +178,14 @@ module "ecs" {
   alb_target_group_arn       = module.alb.alb_target_group_arn
 }
 
-# module "auto_scaling" {
-#   source = "./modules/auto_scaling"
+module "auto_scaling" {
+  source = "./modules/auto_scaling"
 
-#   ecs_service_name = module.ecs.ecs_service_name
+  ecs_cluster_name = module.ecs.ecs_cluster_name
+  ecs_service_name = module.ecs.ecs_service_name
 
-#   depends_on = [module.ecs]
-# }
+  depends_on = [module.ecs]
+}
 
 module "cdn" {
   source = "./modules/cdn"

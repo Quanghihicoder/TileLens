@@ -24,8 +24,6 @@ resource "aws_lambda_event_source_mapping" "tiling_lambda_trigger" {
   function_name    = aws_lambda_function.tiling_lambda.arn
   batch_size       = 10
   enabled          = true
-
-  # depends_on = [aws_iam_role_policy_attachment.lambda_attach_policy]
 }
 
 resource "aws_lambda_function" "clipping_lambda" {
@@ -55,6 +53,4 @@ resource "aws_lambda_event_source_mapping" "clipping_lambda_trigger" {
   function_name    = aws_lambda_function.clipping_lambda.arn
   batch_size       = 10
   enabled          = true
-
-  # depends_on = [aws_iam_role_policy_attachment.lambda_attach_policy]
 }

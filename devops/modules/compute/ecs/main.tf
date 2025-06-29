@@ -14,7 +14,7 @@ data "aws_ami" "ecs_ami" {
 
 resource "aws_instance" "tilelens_ecs_ec2" {
   ami                         = data.aws_ami.ecs_ami.id
-  instance_type               = var.instance_type
+  instance_type               = var.instance_type # it is cheaper to use t3.small running 4 tasks than t3.micro but can only run 1 task which will need to add more ec2 instances
   subnet_id                   = var.public_subnet_a_id
   iam_instance_profile        = var.iam_instance_profile_name
   security_groups             = [var.ecs_sg_id]
@@ -101,6 +101,4 @@ resource "aws_ecs_service" "tilelens_service" {
     container_name   = "tilelens"
     container_port   = 8000
   }
-
-  # depends_on = [aws_lb_listener.https_listener]
 }

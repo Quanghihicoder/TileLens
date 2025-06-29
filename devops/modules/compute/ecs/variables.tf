@@ -7,7 +7,7 @@ variable "app_name" {
 variable "instance_type" {
   description = "The instance type of the EC2 instance running the ECS container"
   type        = string
-  default     = "t2.small"
+  default     = "t3.micro"
 }
 
 variable "public_subnet_a_id" {
