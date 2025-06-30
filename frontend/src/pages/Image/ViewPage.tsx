@@ -271,9 +271,9 @@ const ViewPage = () => {
   const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    if (pastedImages.length == 50) {
+    if (pastedImages.length == 20) {
       alert(
-        "You can only paste maximum 50 images. Save the image and then continue paste from there."
+        "You can only paste maximum 20 images. Save the image and then continue paste from there."
       );
       return;
     }
