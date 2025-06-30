@@ -31,7 +31,8 @@ resource "aws_iam_policy" "lambda_exec_permissions" {
         ]
         Resource = [
           "${var.clipping_queue_arn}",
-          "${var.tiling_queue_arn}"
+          "${var.tiling_queue_arn}",
+          "${var.blending_queue_arn}"
         ]
       },
       {
@@ -138,7 +139,8 @@ resource "aws_iam_policy" "tilelens_ecs_permissions" {
         Action = ["sqs:SendMessage"],
         Resource = [
           "${var.clipping_queue_arn}",
-          "${var.tiling_queue_arn}"
+          "${var.tiling_queue_arn}",
+          "${var.blending_queue_arn}"
         ]
       },
       {

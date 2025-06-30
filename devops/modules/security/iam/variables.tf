@@ -8,6 +8,11 @@ variable "tiling_queue_arn" {
   type        = string
 }
 
+variable "blending_queue_arn" {
+  description = "The ARN of the blending image queue"
+  type        = string
+}
+
 variable "assets_bucket_arn" {
   description = "The ARN of the assets bucket"
   type        = string

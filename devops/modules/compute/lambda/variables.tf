@@ -11,11 +11,19 @@ variable "clipping_lambda_name" {
   type = string
 }
 
+variable "blending_lambda_name" {
+  type = string
+}
+
 variable "tiling_lambda_timeout" {
   type = number
 }
 
 variable "clipping_lambda_timeout" {
+  type = number
+}
+
+variable "blending_lambda_timeout" {
   type = number
 }
 
@@ -35,6 +43,11 @@ variable "clipping_queue_arn" {
 }
 
 variable "tiling_queue_arn" {
+  description = "The ARN of the tiling image queue"
+  type        = string
+}
+
+variable "blending_queue_arn" {
   description = "The ARN of the tiling image queue"
   type        = string
 }

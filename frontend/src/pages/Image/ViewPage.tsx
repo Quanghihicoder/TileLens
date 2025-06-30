@@ -17,10 +17,9 @@ import { ZoomControls } from "../../components/ZoomControls";
 import { ClippingControls } from "../../components/ClippingControls";
 import { ClippingOverlay } from "../../components/ClippingOverlay";
 import { useOffset, type Offset } from "../../hooks/useOffset";
+import { BlendingControls } from "../../components/BlendingControls";
 
 export type PastedImage = {
-  originalWidth: number;
-  originalHeight: number;
   width: number;
   height: number;
   left: number;
@@ -69,6 +68,7 @@ const ViewPage = () => {
 
   // Blending state
   const [isHovered, setIsHovered] = useState(false);
+  const [isSendingBlending, setIsSendingBlending] = useState(false);
   const [pastedImages, setPastedImages] = useState<PastedImage[]>([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
 
@@ -162,7 +162,7 @@ const ViewPage = () => {
     [levelWidth, levelHeight, widthOverflow, heightOverflow, offset]
   );
 
-  const onMouseEnter = (e: React.MouseEvent) => {
+  const onMouseEnter = () => {
     setIsHovered(true);
   };
 
@@ -271,9 +271,9 @@ const ViewPage = () => {
   const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    if (pastedImages.length > 20) {
+    if (pastedImages.length == 50) {
       alert(
-        "You can only paste maximum 20 images. Save the image and then continue paste from there."
+        "You can only paste maximum 50 images. Save the image and then continue paste from there."
       );
       return;
     }
@@ -309,13 +309,16 @@ const ViewPage = () => {
             Number(response.data.image.height)
           );
 
+          // Need to ceil because sharp can't process float
           const pastedImage: PastedImage = {
-            originalWidth: response.data.image.width,
-            originalHeight: response.data.image.height,
-            width: relativeSize.width,
-            height: relativeSize.height,
-            left: mousePositionRef.current!.x - relativeSize.width / 2,
-            top: mousePositionRef.current!.y - relativeSize.height / 2,
+            width: Math.ceil(relativeSize.width),
+            height: Math.ceil(relativeSize.height),
+            left: Math.ceil(
+              mousePositionRef.current!.x - relativeSize.width / 2
+            ),
+            top: Math.ceil(
+              mousePositionRef.current!.y - relativeSize.height / 2
+            ),
             imageId: pastedImageId,
             imageType: response.data.image.imageType,
           };
@@ -365,6 +368,39 @@ const ViewPage = () => {
     }
   };
 
+  const blendImage = async () => {
+    if (pastedImages.length == 0) {
+      alert("Invalid blend");
+      return;
+    }
+
+    setIsSendingBlending(true);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/image/blend`,
+        {
+          imageId: imageId,
+          width: levelWidth,
+          height: levelHeight,
+          pastedImages: pastedImages,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response) {
+        alert("Blend request sent successfully. Image will be in my images.");
+      }
+    } catch (err) {
+      console.error("Error blending image:", err);
+    } finally {
+      setIsSendingBlending(false);
+      setPastedImages([]);
+    }
+  };
+
   // On Load
   useEffect(() => {
     if (!userId || !imageId) {
@@ -392,13 +428,15 @@ const ViewPage = () => {
       let image = pastedImages[i];
 
       if (levelWidthBefore) {
-        image.width = (image.width / levelWidthBefore) * levelWidth;
-        image.left = (image.left / levelWidthBefore) * levelWidth;
+        image.width = Math.ceil((image.width / levelWidthBefore) * levelWidth);
+        image.left = Math.ceil((image.left / levelWidthBefore) * levelWidth);
       }
 
       if (levelHeightBefore) {
-        image.height = (image.height / levelHeightBefore) * levelHeight;
-        image.top = (image.top / levelHeightBefore) * levelHeight;
+        image.height = Math.ceil(
+          (image.height / levelHeightBefore) * levelHeight
+        );
+        image.top = Math.ceil((image.top / levelHeightBefore) * levelHeight);
       }
 
       newPastedImages.push(image);
@@ -444,7 +482,7 @@ const ViewPage = () => {
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseLeave}
-                onPaste={isHovered ? handlePaste : undefined}
+                onPaste={isHovered && !isClipping ? handlePaste : undefined}
                 tabIndex={0}
               >
                 {pastedImages.map((image, i) => {
@@ -477,18 +515,33 @@ const ViewPage = () => {
             </div>
           </div>
 
+          {/* Blending Buttons */}
+          {pastedImages.length > 0 && (
+            <BlendingControls
+              isSendingBlending={isSendingBlending}
+              onBlend={async () => {
+                await blendImage();
+              }}
+              onToggleBlending={() => {
+                setPastedImages([]);
+              }}
+            />
+          )}
+
           {/* Clipping Buttons */}
-          <ClippingControls
-            isClipping={isClipping}
-            isSendingClipping={isSendingClipping}
-            onClip={async () => {
-              await clipImage();
-            }}
-            onToggleClipping={() => {
-              setClippingPath([]);
-              setIsClipping(!isClipping);
-            }}
-          />
+          {pastedImages.length == 0 && (
+            <ClippingControls
+              isClipping={isClipping}
+              isSendingClipping={isSendingClipping}
+              onClip={async () => {
+                await clipImage();
+              }}
+              onToggleClipping={() => {
+                setClippingPath([]);
+                setIsClipping(!isClipping);
+              }}
+            />
+          )}
 
           {/* Zoom Buttons */}
           <ZoomControls

@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { MulterError } from "multer";
-import { createClippedImage, createImage } from "../../models/image";
+import { createClippedImage, createBlendedImage, createImage } from "../../models/image";
 import tileQueue from "../../queues/tileQueue";
 import clipQueue from "../../queues/clipQueue";
+import blendQueue from "../../queues/blendQueue";
 import path from "path";
 import { nanoid } from 'nanoid';
 import dotenv from "dotenv";
@@ -131,6 +132,56 @@ export const uploadClipped = async (
     });
   } catch (err) {
     console.error("Clipping error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+export const uploadBlended = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.body) {
+      res.status(400).json({ success: false, message: "No image blended data" });
+      return;
+    }
+
+    const user = (req as any).user;
+    if (!user?.id) {
+      res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: No user ID" });
+      return;
+    }
+
+    const data = req.body;
+
+    if (!data.imageId || data.pastedImages.length <= 0 || Number(data.width) <= 0 || Number(data.height) <= 0) {
+      res.status(400).json({ success: false, message: "Invalid blended data" });
+      return;
+    }
+
+    const imageId = nanoid(); 
+    const originalname= "blended-" + data.imageId
+
+    await createBlendedImage(user.id, imageId, originalname);
+
+    await blendQueue.add("blend-image", {
+      userId: user.id,
+      newImageId: imageId,
+      originalImageId: data.imageId,
+      levelWidth: data.width,
+      levelHeight: data.height,
+      pastedImages: data.pastedImages
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+    });
+  } catch (err) {
+    console.error("Blending error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

@@ -56,6 +56,11 @@ locals {
       name               = "clipping-queue"
       visibility_timeout = 125 # 2 minutes + 5 seconds
     }
+
+    blending_queue = {
+      name               = "blending-queue"
+      visibility_timeout = 125 # 2 minutes + 5 seconds
+    }
   }
 
   lambdas = {
@@ -65,6 +70,10 @@ locals {
     }
     clipping_lambda = {
       name    = "clipping-lambda"
+      timeout = 120 # 2 minutes
+    }
+    blending_lambda = {
+      name    = "blending-lambda"
       timeout = 120 # 2 minutes
     }
   }
@@ -96,6 +105,7 @@ module "iam" {
 
   clipping_queue_arn        = module.sqs.clipping_queue_arn
   tiling_queue_arn          = module.sqs.tiling_queue_arn
+  blending_queue_arn        = module.sqs.blending_queue_arn
   assets_bucket_arn         = module.s3.assets_bucket_arn
   images_dynamodb_table_arn = module.dynamodb.images_dynamodb_table_arn
 }
@@ -125,12 +135,15 @@ module "lambda" {
   lambda_exec_role_arn       = module.iam.lambda_exec_role_arn
   tiling_lambda_name         = local.lambdas.tiling_lambda.name
   clipping_lambda_name       = local.lambdas.clipping_lambda.name
+  blending_lambda_name       = local.lambdas.blending_lambda.name
   tiling_lambda_timeout      = local.lambdas.tiling_lambda.timeout
   clipping_lambda_timeout    = local.lambdas.clipping_lambda.timeout
+  blending_lambda_timeout    = local.lambdas.blending_lambda.timeout
   assets_bucket_name         = local.app_buckets.assets.name
   images_dynamodb_table_name = local.dynamodb_tables.images.name
   clipping_queue_arn         = module.sqs.clipping_queue_arn
   tiling_queue_arn           = module.sqs.tiling_queue_arn
+  blending_queue_arn         = module.sqs.blending_queue_arn
   tiling_queue_url           = module.sqs.tiling_queue_url
 }
 
@@ -173,6 +186,7 @@ module "ecs" {
   aws_region                 = var.aws_region
   clipping_queue_url         = module.sqs.clipping_queue_url
   tiling_queue_url           = module.sqs.tiling_queue_url
+  blending_queue_url         = module.sqs.blending_queue_url
   ecs_logs_group_name        = module.logs.ecs_logs_group_name
   frontend_url               = "https://${local.app_buckets.frontend.domain}"
   alb_target_group_arn       = module.alb.alb_target_group_arn

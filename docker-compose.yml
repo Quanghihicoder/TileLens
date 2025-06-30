@@ -82,6 +82,19 @@ services:
     env_file:
       - ./worker/clipping_image/.env
 
+  worker-blending-image:
+    build: ./worker/blending_image
+    volumes:
+      - ./backend/assets:/app/assets
+    depends_on:
+      - redis
+      - mongodb
+    command: npm start
+    deploy:
+      replicas: 1
+    env_file:
+      - ./worker/blending_image/.env
+
 volumes:
   mysql_data:
   mongodb_data:

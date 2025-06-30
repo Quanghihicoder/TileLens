@@ -29,6 +29,7 @@ export async function createImageDynamo(
       width: null,
       height: null,
       isClipped: false,
+      isBlended: false,
       uploadedAt: new Date().toISOString(),
     },
   }));
@@ -53,6 +54,32 @@ export async function createClippedImageDynamo(
       width: null,
       height: null,
       isClipped: true,
+      isBlended: false,
+      uploadedAt: new Date().toISOString(),
+    },
+  }));
+}
+
+export async function createBlendedImageDynamo(
+  userId: number,
+  imageId: string,
+  imageOriginalName: string
+): Promise<void> {
+  const client = getDynamoDb();
+  await client.send(new PutCommand({
+    TableName: tableName,
+    Item: {
+      id: makeId(userId, imageId),
+      userId,
+      imageId,
+      imageOriginalName,
+      imageType: null,
+      processing: true,
+      maxZoomLevel: null,
+      width: null,
+      height: null,
+      isClipped: false,
+      isBlended: true,
       uploadedAt: new Date().toISOString(),
     },
   }));
@@ -68,7 +95,7 @@ export async function getImagesByUserIdDynamo(userId: number): Promise<any[]> {
     ExpressionAttributeValues: {
       ":uid": userId,
     },
-    ProjectionExpression: "imageId, imageOriginalName, imageType, processing, isClipped, uploadedAt", 
+    ProjectionExpression: "imageId, imageOriginalName, imageType, processing, isClipped, isBlended, uploadedAt", 
   }));
   return res.Items ?? [];
 }

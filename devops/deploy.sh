@@ -18,6 +18,9 @@ cd ../worker/clipping_image/
 cd ../tiling_image/
 ./build.sh
 
+cd ../blending_image/
+./build.sh
+
 cd ../../frontend
 npm install
 npm run build

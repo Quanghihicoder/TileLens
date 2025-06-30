@@ -71,6 +71,10 @@ resource "aws_ecs_task_definition" "tilelens_app_task" {
         {
           name  = "SQS_TILING_QUEUE_URL",
           value = "${var.tiling_queue_url}"
+        },
+        {
+          name  = "SQS_BLENDING_QUEUE_URL",
+          value = "${var.blending_queue_url}"
         }
       ],
       portMappings = [{

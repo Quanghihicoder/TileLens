@@ -3,24 +3,23 @@ import fs from "fs-extra";
 import path from "path";
 import { Queue, Worker } from "bullmq";
 import { MongoClient } from "mongodb";
-import { createCanvas } from "canvas";
 import dotenv from "dotenv";
 import { getImagePath } from "./utilities";
 dotenv.config();
 
-type Point = { x: number; y: number };
-
-type BoundingRect = {
-  left: number;
-  top: number;
+type PastedImage = {
   width: number;
   height: number;
-} | null;
+  left: number;
+  top: number;
+  imageId: string;
+  imageType: string;
+};
 
-const redisHost = process.env.REDIS_HOST || "redis"
-const redisPort = Number(process.env.REDIS_PORT) || 6379
+const redisHost = process.env.REDIS_HOST || "redis";
+const redisPort = Number(process.env.REDIS_PORT) || 6379;
 const tableName = process.env.TABLE_NAME || "images";
-const imageDir = process.env.IMAGE_DIR || "/assets/images"
+const imageDir = process.env.IMAGE_DIR || "/assets/images";
 
 const connection = {
   host: redisHost,
@@ -119,31 +118,8 @@ async function getImageType(
   return image?.imageType;
 }
 
-function getBoundingRect(points: Point[]): BoundingRect {
-  if (!points.length) return null;
-
-  let minX = Infinity,
-    minY = Infinity;
-  let maxX = -Infinity,
-    maxY = -Infinity;
-
-  for (const { x, y } of points) {
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-
-  return {
-    left: minX,
-    top: minY,
-    width: maxX - minX,
-    height: maxY - minY,
-  };
-}
-
 const imageWorker = new Worker(
-  "image-clipping",
+  "image-blending",
   async (job) => {
     const {
       userId,
@@ -151,12 +127,12 @@ const imageWorker = new Worker(
       originalImageId,
       levelWidth,
       levelHeight,
-      clipPaths,
+      pastedImages,
     } = job.data;
     const jobId = job.id;
 
     console.log(
-      `[Job ${jobId}] Clipping image ${originalImageId} to ${newImageId} for user ${userId}...`
+      `[Job ${jobId}] Blending image ${originalImageId} to ${newImageId} for user ${userId}...`
     );
 
     const imageType = await getImageType(Number(userId), originalImageId);
@@ -176,66 +152,54 @@ const imageWorker = new Worker(
       await fs.access(inputPath, fs.constants.R_OK);
       await fs.ensureDir(outputDir);
 
-      const canvas = createCanvas(Number(levelWidth), Number(levelHeight));
-      const ctx = canvas.getContext("2d");
+      const canvas = await sharp(inputPath)
+        .rotate()
+        .resize(Number(levelWidth), Number(levelHeight));
 
-      ctx.beginPath();
-      ctx.moveTo(clipPaths[0].x, clipPaths[0].y);
-      for (let i = 1; i < clipPaths.length; i++) {
-        ctx.lineTo(clipPaths[i].x, clipPaths[i].y);
-      }
-      ctx.lineTo(clipPaths[0].x, clipPaths[0].y);
-      ctx.closePath();
-      ctx.fillStyle = "white";
-      ctx.fill();
+      const composites = await Promise.all(
+        pastedImages.map(async (img: PastedImage) => {
+          const pastedImageInputPath = path.join(
+            __dirname,
+            `${imageDir}`,
+            `${userId}`,
+            `${img.imageId}.${img.imageType}`
+          );
+          const buffer = await sharp(pastedImageInputPath)
+            .rotate()
+            .resize(Math.ceil(img.width), Math.ceil(img.height))
+            .toBuffer();
 
-      const maskBuffer = canvas.toBuffer("image/png");
+          return {
+            input: buffer,
+            top: Math.ceil(img.top),
+            left: Math.ceil(img.left),
+          };
+        })
+      );
 
-      const rect = getBoundingRect(clipPaths);
+      const blended = await canvas
+        .composite(composites)
+        .toFile(getImagePath(outputDir, newImageId));
 
-      await sharp(inputPath).rotate()
-        .resize(Number(levelWidth), Number(levelHeight))
-        .composite([{ input: maskBuffer, blend: "dest-in" }])
-        .toFile(getImagePath(outputDir, "temp-" + newImageId));
-
-      if (rect && rect.width > 0 && rect.height > 0) {
-        await sharp(getImagePath(outputDir, "temp-" + newImageId))
-          .extract({
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-          })
-          .toFile(getImagePath(outputDir, newImageId));
-
-        await fs.unlink(getImagePath(outputDir, "temp-" + newImageId));
-      } else {
-        await fs.rename(
-          getImagePath(outputDir, "temp-" + newImageId),
-          getImagePath(outputDir, newImageId)
-        );
-      }
-
-      // Update MongoDB document after successful clipping
+      // Update MongoDB document after successful blending
       await updateImageDocument(userId, newImageId, "png");
 
       console.log(
-        `[Job ${jobId}] Successfully clipped image ${originalImageId} to ${newImageId}`
+        `[Job ${jobId}] Successfully blended image ${originalImageId} to ${newImageId}`
       );
       return { status: "success", userId, outputDir, newImageId };
     } catch (error) {
       console.error(
-        `[Job ${jobId}] Failed to clip image ${originalImageId}:`,
+        `[Job ${jobId}] Failed to blend image ${originalImageId}:`,
         error
       );
-
       throw error;
     } finally {
       await imageQueue.add("process-image", {
         userId: userId,
         imageId: newImageId,
         imageType: "png",
-        originalName: "clipped-" + originalImageId + ".png",
+        originalName: "blended-" + originalImageId + ".png",
       });
     }
   },
@@ -263,4 +227,4 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-console.log("Image clipping worker started");
+console.log("Image blending worker started");

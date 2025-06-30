@@ -77,6 +77,11 @@ variable "tiling_queue_url" {
   type        = string
 }
 
+variable "blending_queue_url" {
+  description = "The URL of the blending image queue"
+  type        = string
+}
+
 variable "ecs_logs_group_name" {
   description = "Log group name of the ecs task"
   type        = string

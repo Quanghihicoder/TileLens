@@ -10,6 +10,7 @@ interface Image {
   imageType: string;
   processing: boolean;
   isClipped: boolean;
+  isBlended: boolean;
 }
 
 const environment = import.meta.env.VITE_ENV;
@@ -128,14 +129,27 @@ const ImageList = () => {
         >
           Clipped
         </button>
+        /
+        <button
+          className={`${
+            filter == 3 ? "text-blue-600 underline" : "text-gray-400"
+          } mx-2`}
+          onClick={() => {
+            setFilter(3);
+          }}
+        >
+          Blended
+        </button>
         Images
       </h2>
       <div className="grid grid-cols-1 gap-6">
         {images
           .filter((img) => {
             if (filter === 0) return true;
-            if (filter === 1) return img.isClipped === false;
+            if (filter === 1)
+              return img.isClipped === false && img.isBlended === false;
             if (filter === 2) return img.isClipped === true;
+            if (filter === 3) return img.isBlended === true;
             return true;
           })
           .map((img) => (

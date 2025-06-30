@@ -20,4 +20,9 @@ cd worker/clipping_image
 cp .env.template .env
 cd ../../
 
+# Set up worker/blending_image environment
+cd worker/blending_image
+cp .env.template .env
+cd ../../
+
 echo ".env files copied successfully."
