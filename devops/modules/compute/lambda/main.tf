@@ -64,7 +64,7 @@ resource "aws_lambda_function" "blending_lambda" {
   filename         = "${path.module}/build/blending_lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/build/blending_lambda.zip")
 
-  memory_size = 3000
+  memory_size = 2048
   timeout     = var.blending_lambda_timeout
 
   environment {
