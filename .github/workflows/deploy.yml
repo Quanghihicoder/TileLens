@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Check if deploy should run
         if: secrets.RUN_DEPLOY == 'true'
+        run: echo "Deploying..."
 
       - name: Checkout code
         uses: actions/checkout@v4
