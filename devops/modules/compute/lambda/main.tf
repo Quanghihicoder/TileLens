@@ -4,7 +4,7 @@ resource "aws_lambda_function" "tiling_lambda" {
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn
   filename         = "${path.module}/build/tiling_lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/build/tiling_lambda.zip")
+  source_code_hash = fileexists("${path.module}/build/tiling_lambda.zip") ? filebase64sha256("${path.module}/build/tiling_lambda.zip") : null
 
   memory_size = 2048
   timeout     = var.tiling_lambda_timeout
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "clipping_lambda" {
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn
   filename         = "${path.module}/build/clipping_lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/build/clipping_lambda.zip")
+  source_code_hash = fileexists("${path.module}/build/clipping_lambda.zip") ? filebase64sha256("${path.module}/build/clipping_lambda.zip") : null
 
   memory_size = 1024
   timeout     = var.clipping_lambda_timeout
@@ -62,7 +62,8 @@ resource "aws_lambda_function" "blending_lambda" {
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn
   filename         = "${path.module}/build/blending_lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/build/blending_lambda.zip")
+  source_code_hash = fileexists("${path.module}/build/blending_lambda.zip") ? filebase64sha256("${path.module}/build/blending_lambda.zip") : null
+
 
   memory_size = 2048
   timeout     = var.blending_lambda_timeout
