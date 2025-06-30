@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check if deploy should run
-        if: secrets.RUN_DEPLOY == 'true'
+        if: vars.RUN_DEPLOY == 'true'
         run: echo "Deploying..."
 
       - name: Checkout code
@@ -40,18 +40,18 @@ jobs:
       - name: Create frontend .env.production
         run: |
           cat <<EOF > frontend/.env.production
-          VITE_ENV=${{ secrets.VITE_ENV }}
-          VITE_API_URL=${{ secrets.VITE_API_URL }}
-          VITE_ASSETS_URL=${{ secrets.VITE_ASSETS_URL }}
+          VITE_ENV=${{ vars.VITE_ENV }}
+          VITE_API_URL=${{ vars.VITE_API_URL }}
+          VITE_ASSETS_URL=${{ vars.VITE_ASSETS_URL }}
           EOF
 
       - name: Run deploy script
         env:
-          TF_VAR_aws_region: ${{ secrets.TF_VAR_AWS_REGION }}
-          TF_VAR_region_id: ${{ secrets.TF_VAR_REGION_ID }}
-          TF_VAR_aza: ${{ secrets.TF_VAR_AZA }}
-          TF_VAR_azb: ${{ secrets.TF_VAR_AZB }}
-          TF_VAR_ecs_image_url: ${{ secrets.TF_VAR_ECS_IMAGE_URL }}
+          TF_VAR_aws_region: ${{ vars.TF_VAR_AWS_REGION }}
+          TF_VAR_region_id: ${{ vars.TF_VAR_REGION_ID }}
+          TF_VAR_aza: ${{ vars.TF_VAR_AZA }}
+          TF_VAR_azb: ${{ vars.TF_VAR_AZB }}
+          TF_VAR_ecs_image_url: ${{ vars.TF_VAR_ECS_IMAGE_URL }}
           TF_VAR_hosted_zone_id: ${{ secrets.TF_VAR_HOSTED_ZONE_ID }}
           TF_VAR_acm_certificate_arn: ${{ secrets.TF_VAR_ACM_CERTIFICATE_ARN }}
           TF_VAR_db_username: ${{ secrets.TF_VAR_DB_USERNAME }}
