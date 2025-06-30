@@ -1,4 +1,13 @@
 terraform {
+
+  backend "s3" {
+    bucket         = "tilelens-terraform"
+    key            = "terraform/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "tilelens-terraform-lock"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -209,7 +218,6 @@ module "cdn" {
   app_bucket_regional_domain_names = module.s3.app_bucket_regional_domain_names
   cloudfront_acm_certificate_arn   = var.acm_certificate_arn
 }
-
 
 module "route53" {
   source = "./modules/load_balancing/route53"
