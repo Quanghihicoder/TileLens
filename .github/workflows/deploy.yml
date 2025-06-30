@@ -7,8 +7,8 @@ on:
 
 jobs:
   deploy:
+    if: github.event_name == 'push' && env.RUN_DEPLOY == 'true'
     runs-on: ubuntu-latest
-    if: ${{ secrets.RUN_DEPLOY == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
