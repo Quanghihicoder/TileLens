@@ -32,5 +32,6 @@ jobs:
           TF_VAR_vpc_id: ${{ secrets.TF_VAR_VPC_ID }}
           TF_VAR_public_route_table_id: ${{ secrets.TF_VAR_PUBLIC_ROUTE_TABLE_ID }}
         run: |
-          chmod +x ./devops/destroy.sh
-          ./devops/destroy.sh
+          cd ./devops
+          chmod +x destroy.sh
+          ./destroy.sh
