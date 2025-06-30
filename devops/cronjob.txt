@@ -1,0 +1,15 @@
+If you dont like to setup GitHub actions. On Mac
+
+Open your crontab
+crontab -e
+
+Paste these
+0 8 * * * /bin/bash /Users/yourname/projects/deploy.sh >> /tmp/deploy.log 2>&1
+0 17 * * * /bin/bash /Users/yourname/projects/destroy.sh >> /tmp/destroy.log 2>&1
+
+Vim Save and Exit
+:wq Save
+:qa Quit only
+
+Clear all cron jobs
+crontab -r
