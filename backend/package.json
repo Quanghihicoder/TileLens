@@ -16,7 +16,7 @@
     "@aws-sdk/client-sqs": "^3.831.0",
     "@aws-sdk/lib-dynamodb": "^3.830.0",
     "@aws-sdk/s3-request-presigner": "^3.832.0",
-    "@prisma/client": "^6.9.0",
+    "@prisma/client": "^6.11.0",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "body-parser": "^2.2.0",
@@ -47,7 +47,7 @@
     "@types/multer-s3": "^3.0.3",
     "@types/node": "^22.15.29",
     "dotenv-cli": "^8.0.0",
-    "prisma": "^6.9.0",
+    "prisma": "^6.11.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }

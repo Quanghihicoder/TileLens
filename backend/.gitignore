@@ -31,5 +31,3 @@ Thumbs.db
 .out/
 
 assets/*
-
-prisma/migrations/*
