@@ -181,24 +181,25 @@ module "alb" {
 module "ecs" {
   source = "./modules/compute/ecs"
 
-  public_subnet_a_id         = module.networking.public_subnet_a_id
-  iam_instance_profile_name  = module.iam.iam_instance_profile_name
-  ecs_sg_id                  = module.security_groups.ecs_sg_id
-  ecs_task_exec_role_arn     = module.iam.ecs_task_exec_role_arn
-  ecs_image_url              = var.ecs_image_url
-  assets_bucket_name         = local.app_buckets.assets.name
-  images_dynamodb_table_name = local.dynamodb_tables.images.name
-  db_username                = var.db_username
-  db_password                = var.db_password
-  mysqldb_name               = local.rds_mysqldb_name
-  mysqldb_address            = module.rds.mysqldb_address
-  aws_region                 = var.aws_region
-  clipping_queue_url         = module.sqs.clipping_queue_url
-  tiling_queue_url           = module.sqs.tiling_queue_url
-  blending_queue_url         = module.sqs.blending_queue_url
-  ecs_logs_group_name        = module.logs.ecs_logs_group_name
-  frontend_url               = "https://${local.app_buckets.frontend.domain}"
-  alb_target_group_arn       = module.alb.alb_target_group_arn
+  public_subnet_a_id           = module.networking.public_subnet_a_id
+  iam_instance_profile_name    = module.iam.iam_instance_profile_name
+  ecs_sg_id                    = module.security_groups.ecs_sg_id
+  ecs_task_exec_role_arn       = module.iam.ecs_task_exec_role_arn
+  ecs_image_url                = var.ecs_image_url
+  assets_bucket_name           = local.app_buckets.assets.name
+  images_dynamodb_table_name   = local.dynamodb_tables.images.name
+  db_username                  = var.db_username
+  db_password                  = var.db_password
+  mysqldb_name                 = local.rds_mysqldb_name
+  mysqldb_address              = module.rds.mysqldb_address
+  aws_region                   = var.aws_region
+  clipping_queue_url           = module.sqs.clipping_queue_url
+  tiling_queue_url             = module.sqs.tiling_queue_url
+  blending_queue_url           = module.sqs.blending_queue_url
+  ecs_logs_group_name          = module.logs.ecs_logs_group_name
+  ecs_instance_logs_group_name = module.logs.ecs_instance_logs_group_name
+  frontend_url                 = "https://${local.app_buckets.frontend.domain}"
+  alb_target_group_arn         = module.alb.alb_target_group_arn
 }
 
 module "auto_scaling" {

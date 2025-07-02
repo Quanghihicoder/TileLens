@@ -24,6 +24,35 @@ resource "aws_instance" "tilelens_ecs_ec2" {
   #!/bin/bash
   echo ECS_CLUSTER=${aws_ecs_cluster.tilelens_ecs.name} >> /etc/ecs/ecs.config
   echo "ECS_AVAILABLE_LOGGING_DRIVERS=[\"json-file\",\"awslogs\"]" >> /etc/ecs/ecs.config
+
+  # Install CloudWatch Logs Agent (for Amazon Linux 2)
+  yum update -y
+  yum install -y awslogs
+
+  # Configure CloudWatch Logs Agent
+  cat <<EOT > /etc/awslogs/awslogs.conf
+  [general]
+  state_file = /var/lib/awslogs/agent-state  
+
+  [/var/log/messages]
+  file = /var/log/messages
+  log_group_name = ${var.ecs_instance_logs_group_name}
+  log_stream_name = {instance_id}/messages
+  datetime_format = %b %d %H:%M:%S
+
+  [/var/log/cloud-init-output.log]
+  file = /var/log/cloud-init-output.log
+  log_group_name = ${var.ecs_instance_logs_group_name}
+  log_stream_name = {instance_id}/cloud-init-output
+  datetime_format = %Y-%m-%d %H:%M:%S
+  EOT
+
+  # Set AWS region in config
+  sed -i "s/region = .*/region = ${var.aws_region}/" /etc/awslogs/awscli.conf
+
+  # Enable and start awslogs service
+  systemctl enable awslogsd.service
+  systemctl start awslogsd.service
   EOF
 
   tags = {

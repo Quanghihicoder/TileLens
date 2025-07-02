@@ -87,6 +87,11 @@ variable "ecs_logs_group_name" {
   type        = string
 }
 
+variable "ecs_instance_logs_group_name" {
+  description = "Log group name of the ecs ec2 instance"
+  type        = string
+}
+
 variable "frontend_url" {
   description = "URL of the frontend"
   type        = string
