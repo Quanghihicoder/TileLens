@@ -2,7 +2,7 @@ name: Deploy Pipeline
 
 on:
   schedule:
-    - cron: "45 22 * * *" # 8:45 AM AEST
+    - cron: "45 22 * * 1-5" # 8:45 AM AEST
   workflow_dispatch:
 
 jobs:

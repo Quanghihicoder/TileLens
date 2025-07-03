@@ -2,7 +2,7 @@ name: Destroy Pipeline
 
 on:
   schedule:
-    - cron: "0 7 * * *" # 5PM AEST
+    - cron: "0 7 * * 1-5" # 5PM AEST
   workflow_dispatch:
 
 jobs:
