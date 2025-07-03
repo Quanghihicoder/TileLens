@@ -6,10 +6,7 @@ import {
   type RefObject,
 } from "react";
 
-export type Offset = {
-  x: number;
-  y: number;
-};
+import { type Offset } from "../types";
 
 export const useOffset = (
   levelWidth: number,

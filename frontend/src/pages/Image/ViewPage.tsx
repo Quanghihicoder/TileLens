@@ -9,7 +9,6 @@ import { useAppSelector } from "../../hooks/useRedux";
 import {
   shoelaceArea,
   isNear,
-  type Point,
   calculateRelativeImageSize,
   generateCirclePoints,
   floorPoints,
@@ -19,17 +18,9 @@ import { GridDisplay } from "../../components/GridDisplay";
 import { ZoomControls } from "../../components/ZoomControls";
 import { ClippingControls } from "../../components/ClippingControls";
 import { ClippingOverlay } from "../../components/ClippingOverlay";
-import { useOffset, type Offset } from "../../hooks/useOffset";
+import { useOffset } from "../../hooks/useOffset";
 import { BlendingControls } from "../../components/BlendingControls";
-
-export type PastedImage = {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
-  imageId: string;
-  imageType: string;
-};
+import { type Offset, type Point, type PastedImage } from "../../types";
 
 const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;

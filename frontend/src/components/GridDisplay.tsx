@@ -1,7 +1,6 @@
 import { useTiles } from "../hooks/useTiles";
 import { type RefObject } from "react";
-import { type TileCoords } from "../hooks/useTiles";
-import { type Offset } from "../hooks/useOffset";
+import { type Offset, type TileCoords } from "../types";
 
 const environment = import.meta.env.VITE_ENV;
 const assetsUrl = import.meta.env.VITE_ASSETS_URL;

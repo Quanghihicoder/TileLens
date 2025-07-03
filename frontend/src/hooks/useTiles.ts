@@ -5,17 +5,7 @@ import {
   useCallback,
   type RefObject,
 } from "react";
-import { type Offset } from "./useOffset";
-
-export type TileCoords = {
-  z: number;
-  x: number;
-  y: number;
-  left: number;
-  top: number;
-  width: number | undefined;
-  height: number | undefined;
-};
+import { type Offset, type TileCoords } from "../types";
 
 const TILE_SIZE = 256;
 const BUFFER = 2;

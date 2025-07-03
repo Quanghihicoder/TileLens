@@ -1,9 +1,6 @@
 import React from "react";
-import {
-  calculateDistance,
-  angleWithYAxis,
-  type Point,
-} from "../utilities/math";
+import { calculateDistance, angleWithYAxis } from "../utilities/math";
+import { type Point } from "../types";
 
 interface ClippingOverlayProps {
   clippingPath: Point[];
