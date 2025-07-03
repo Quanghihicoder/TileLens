@@ -4,9 +4,11 @@ TileLens is a full-stack web app that lets you upload ultra-high-res images and 
 
 Think Google Maps... but for your art, photos, or renders.
 
+Give me a ⭐️ if you like this project.
+
 # 🌐 Live Demo
 
-- App: https://tilelens.quangtechnologies.com
+- App (available Mon-Fri, 9AM - 5PM AEST): https://tilelens.quangtechnologies.com
 - Feature Demo: https://www.youtube.com/watch?v=ha4Pr96QHzM
 - Setup & Run Walkthrough: https://youtu.be/aLDVqkwxHoc
 
@@ -43,11 +45,19 @@ VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets
 
 2. Add required terraform variables in devops/terraform.tfvars
 
-3. Deploy the infras
+3. Deploy the infrastructure
 
 ```
 cd devops
+./init.sh
 ./deploy.sh
+```
+
+4. To cleanup the infrastructure
+
+```
+cd devops
+./cleanup.sh
 ```
 
 # Keywords
@@ -56,53 +66,33 @@ ReactJS, Redux, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Dock
 
 AWS Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), RDS (MySQL), DynamoDB
 
-# For Propeller Recuiters
-
-“Cooked” all the tech assessments and combined them all into a single project 😄
-
-My application to the "history book" of the company 😄
-
-## Breakdown of the tech assessments:
-
-+ Frontend challenge: Built the UI
-+ Backend challenge: Created the tiling worker
-+ Infrastructure challenge: Implemented JWT authentication
-+ QA challenge: Figured out that using translate3d(x, y, 0) to grid-display images is the optimal solution
-
-## Bonus extras 😄:
-
-1. Merged everything into one cohesive app
-2. Integrated multiple databases: MySQL, NoSQL, and in-memory
-3. Added FIFO queue processing
-4. Containerized with Docker and deployed on AWS
-5. Included advanced image clipping — nothing less than what a top-tier candidate would show
-6. Cloud Native solution
-
 # 📦 Stack Breakdown
 
-## Frontend (Vite + React + Tailwind)
+## Frontend 
 
 - Lazy loading tiles
 - Smooth, accurate zooming (yes, I did the math). Use translate3d(x, y, 0) to grid-display images.
 - Dynamic tiling rectangles
 - Handles image uploads, token auth, and renders only what’s needed
 - Allow users to clip images by drawing shapes. All math, no library.
+- Allow users to copy and paste images in an image.
 
-## Backend (Node + Express + Prisma + Mongo + MySQL)
+## Backend
 
 - Auth with JWT – users only see their uploads
-- Saves image uploads to /assets/images/{userId}/
-- Pushes image jobs to BullMQ (Redis) for async tiling
-- Uses MongoDB to track processing status + metadata
-- MySQL is just for user accounts
+- Serves APIs
+- Saves image uploads to /assets/images/{userId}/ or S3
+- Pushes image jobs to BullMQ (Redis) or SQS for async tiling
+- Uses MongoDB or DynamoDB to track processing status + metadata
+- MySQL or RDS MySQL is just for user accounts
 
-## Worker (Node.js Standalone)
+## Worker (Node.js Standalone or Lambda)
 
-- Pulls image jobs from Redis queue
-- Does the actual image tiling and clipping (takes 20+ sec for big ones)
-- Saves tiles to /assets/tiles/{userId}/{imageId}/
+- Pulls image jobs from Redis or SQS queue
+- Does the image tiling, clipping and blending
+- Saves tiles to /assets/tiles/{userId}/{imageId}/ or S3
 - Shared volume between backend and worker = instant availability
-- Updates Mongo with final width/height and marks as processing: false
+- Updates Mongo or DynamoDB with final width/height and marks as processing: false
 
 ## Cloud Native AWS
 
@@ -127,8 +117,15 @@ User Uploads Image -> Backend Saves Image & Pushes Job to Tiling Queue
 -> Tiling Worker Updates Mongo Metadata -> Frontend Fetches & Displays Processed Tiles
 
 ## Clip Image
+
 User Draw A Shape -> Call An API With (x,y) Points -> Init A Record In MongoDB -> Push To Clipping Queue
 -> Clipping Worker Picks Job From The Clipping Queue -> Clipping Worker Clips And Saves Image -> Push To Tiling Queue
+-> Same As Above 
+
+## Blend Image
+
+User Copy An Image Id -> Paste The Image In An Image -> Call An API -> Init A Record In MongoDB -> Push To Blending Queue
+-> Blending Worker Picks Job From The Blending Queue -> Blending Worker Blends And Saves Image -> Push To Tiling Queue
 -> Same As Above 
 
 # 🧪 Useful Docker Commands
@@ -142,19 +139,6 @@ Enter backend container shell
 `docker exec -it tilelens-backend-1 sh`
 
 `docker exec -it tilelens-mysql-1 mysql -u root -p`
-
-# 🧠 Why This Design?
-
-- Tiling and clipping is heavy — offloaded to a dedicated worker
-- MongoDB is perfect for flexible image metadata (status, dimensions)
-- Frontend & backend don’t touch raw image data — the worker owns that flow
-- Shared volume keeps tile data immediately available post-processing
-
-# 🧰 Tips & Tricks
-
-Kill local MySQL if it’s already running:
-
-`sudo systemctl stop mysql`
 
 # Final Words
 
