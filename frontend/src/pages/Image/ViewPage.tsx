@@ -13,6 +13,7 @@ import {
   generateCirclePoints,
   floorPoints,
   floorImages,
+  resizeImage,
 } from "../../utilities/math";
 import { GridDisplay } from "../../components/GridDisplay";
 import { ZoomControls } from "../../components/ZoomControls";
@@ -20,11 +21,16 @@ import { ClippingControls } from "../../components/ClippingControls";
 import { ClippingOverlay } from "../../components/ClippingOverlay";
 import { useOffset } from "../../hooks/useOffset";
 import { BlendingControls } from "../../components/BlendingControls";
-import { type Offset, type Point, type PastedImage } from "../../types";
+import {
+  type Offset,
+  type Point,
+  type PastedImage,
+  type ImageHandler,
+} from "../../types";
+import { BlendingOverlay } from "../../components/BlendingOverlay";
 
 const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;
-const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
 const ViewPage = () => {
   const { imageId } = useParams<{ imageId: string }>();
@@ -69,6 +75,11 @@ const ViewPage = () => {
   const [isSendingBlending, setIsSendingBlending] = useState(false);
   const [pastedImages, setPastedImages] = useState<PastedImage[]>([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
+  const [editImageIndex, setEditImageIndex] = useState<number | null>(null);
+  const [editDirectionIndex, setEditDirectionIndex] = useState<number | null>(
+    null
+  );
+  const isResizeImageRef = useRef(false);
 
   // Image data
   const {
@@ -109,6 +120,69 @@ const ViewPage = () => {
       ) / 2
     );
   }, [zoom, levelWidth, levelHeight]);
+
+  const handles: ImageHandler[] = useMemo(() => {
+    if (editImageIndex != null && pastedImages.length > 0) {
+      const image = pastedImages[editImageIndex];
+      return [
+        {
+          directionIndex: 0,
+          cursor: "nwse-resize",
+          left: image.left,
+          top: image.top,
+        }, // top-left
+        {
+          directionIndex: 1,
+          cursor: "ns-resize",
+          left: image.left + image.width / 2,
+          top: image.top,
+        }, // top-center
+        {
+          directionIndex: 2,
+          cursor: "nesw-resize",
+          left: image.left + image.width,
+          top: image.top,
+        }, // top-right
+        {
+          directionIndex: 3,
+          cursor: "ew-resize",
+          left: image.left,
+          top: image.top + image.height / 2,
+        }, // mid-left
+        {
+          directionIndex: 4,
+          cursor: "move",
+          left: image.left + image.width / 2,
+          top: image.top + image.height / 2,
+        }, // center
+        {
+          directionIndex: 5,
+          cursor: "ew-resize",
+          left: image.left + image.width,
+          top: image.top + image.height / 2,
+        }, // mid-right
+        {
+          directionIndex: 6,
+          cursor: "nesw-resize",
+          left: image.left,
+          top: image.top + image.height,
+        }, // bottom-left
+        {
+          directionIndex: 7,
+          cursor: "ns-resize",
+          left: image.left + image.width / 2,
+          top: image.top + image.height,
+        }, // bottom-center
+        {
+          directionIndex: 8,
+          cursor: "nwse-resize",
+          left: image.left + image.width,
+          top: image.top + image.height,
+        }, // bottom-right
+      ];
+    }
+    return [];
+  }, [editImageIndex, pastedImages]);
 
   const { offset, clampOffset, prevOffsetRef, setOffset } = useOffset(
     levelWidth,
@@ -169,13 +243,20 @@ const ViewPage = () => {
         return newPath;
       });
 
-      if (editPointIndex) {
+      if (editPointIndex != null) {
         if (editPointIndex > index) {
           const newEditIndex = editPointIndex + 1;
           setEditPointIndex(newEditIndex);
         }
       }
     }
+  };
+
+  const resetDragRef = () => {
+    draggingPointRef.current = false;
+    isResizeImageRef.current = false;
+    draggingRef.current = false;
+    dragStartRef.current = null;
   };
 
   const onMouseEnter = () => {
@@ -216,8 +297,25 @@ const ViewPage = () => {
           }
         }
       } else {
-        if (editPointIndex && isNear(clippingPath[editPointIndex], position)) {
+        if (
+          editPointIndex != null &&
+          isNear(clippingPath[editPointIndex], position)
+        ) {
           draggingPointRef.current = true;
+        }
+
+        if (
+          editImageIndex != null &&
+          editDirectionIndex != null &&
+          isNear(
+            {
+              x: handles[editDirectionIndex].left,
+              y: handles[editDirectionIndex].top,
+            },
+            position
+          )
+        ) {
+          isResizeImageRef.current = true;
         }
         dragStartRef.current = { x: e.clientX, y: e.clientY };
         offsetStartRef.current = { ...offset };
@@ -234,6 +332,7 @@ const ViewPage = () => {
     if (!draggingRef.current || !dragStartRef.current) return;
     if (isClipping && !isEditClipping) return;
     if (draggingPointRef.current) return;
+    if (editImageIndex != null && editDirectionIndex != null) return;
 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
@@ -256,18 +355,36 @@ const ViewPage = () => {
         setClippingPath((prev) => [...prev, position]);
       }
 
-      if (draggingPointRef.current && editPointIndex) {
-        if (position) {
-          const updated = [...clippingPath];
-          updated[editPointIndex] = position;
-          setClippingPath(updated);
-        }
+      if (draggingPointRef.current && editPointIndex != null) {
+        const updated = [...clippingPath];
+        updated[editPointIndex] = position;
+        setClippingPath(updated);
+      }
+
+      if (
+        isResizeImageRef.current &&
+        editImageIndex != null &&
+        editDirectionIndex != null
+      ) {
+        const resized = resizeImage(
+          pastedImages[editImageIndex],
+          position,
+          editDirectionIndex
+        );
+        const updated = [...pastedImages];
+        updated[editImageIndex] = {
+          width: resized.width,
+          height: resized.height,
+          left: resized.left,
+          top: resized.top,
+          imageId: updated[editImageIndex].imageId,
+          imageType: updated[editImageIndex].imageType,
+        };
+        setPastedImages(updated);
       }
     }
 
-    draggingPointRef.current = false;
-    draggingRef.current = false;
-    dragStartRef.current = null;
+    resetDragRef();
   };
 
   const onMouseLeave = (e: React.MouseEvent) => {
@@ -279,17 +396,49 @@ const ViewPage = () => {
         setClippingPath((prev) => [...prev, position]);
       }
 
-      if (draggingPointRef.current && editPointIndex && draggingRef.current) {
+      if (
+        draggingPointRef.current &&
+        editPointIndex != null &&
+        draggingRef.current
+      ) {
         if (position) {
           const updated = [...clippingPath];
           updated[editPointIndex] = position;
           setClippingPath(updated);
         }
       }
+
+      if (
+        isResizeImageRef.current &&
+        editImageIndex != null &&
+        editDirectionIndex != null
+      ) {
+        const resized = resizeImage(
+          pastedImages[editImageIndex],
+          position,
+          editDirectionIndex
+        );
+        const updated = [...pastedImages];
+        updated[editImageIndex] = {
+          width: resized.width,
+          height: resized.height,
+          left: resized.left,
+          top: resized.top,
+          imageId: updated[editImageIndex].imageId,
+          imageType: updated[editImageIndex].imageType,
+        };
+        setPastedImages(updated);
+      }
     }
-    draggingPointRef.current = false;
-    draggingRef.current = false;
-    dragStartRef.current = null;
+
+    resetDragRef();
+  };
+
+  const onDoubleClick = () => {
+    if (editImageIndex != null) {
+      setEditImageIndex(null);
+      setEditDirectionIndex(null);
+    }
   };
 
   const handleWheel = useCallback(
@@ -507,9 +656,6 @@ const ViewPage = () => {
     setPastedImages(newPastedImages);
   }, [zoom]);
 
-  const imageUrl = (pastedImageId: string, pastedImageType: string): string =>
-    `${assetsUrl}/images/${userId}/${pastedImageId}.${pastedImageType}`;
-
   return (
     <>
       <div className="flex-1 w-full relative overflow-hidden">
@@ -550,24 +696,18 @@ const ViewPage = () => {
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseLeave}
                 onPaste={isHovered && !isClipping ? handlePaste : undefined}
+                onDoubleClick={onDoubleClick}
                 tabIndex={0}
               >
-                {pastedImages.map((image, i) => {
-                  return (
-                    <img
-                      key={i}
-                      src={imageUrl(image.imageId, image.imageType)}
-                      className="absolute z-15"
-                      style={{
-                        left: `${image.left}px`,
-                        top: `${image.top}px`,
-                        width: `${image.width}px`,
-                        height: `${image.height}px`,
-                      }}
-                      draggable={false}
-                    />
-                  );
-                })}
+                <BlendingOverlay
+                  images={pastedImages}
+                  handles={handles}
+                  userId={userId}
+                  editImageIndex={editImageIndex}
+                  setEditImageIndex={setEditImageIndex}
+                  editDirectionIndex={editDirectionIndex}
+                  setEditDirectionIndex={setEditDirectionIndex}
+                />
                 <ClippingOverlay
                   clippingPath={clippingPath}
                   editPointIndex={editPointIndex}
@@ -594,9 +734,13 @@ const ViewPage = () => {
               isSendingBlending={isSendingBlending}
               onBlend={async () => {
                 await blendImage();
+                setEditImageIndex(null);
+                setEditDirectionIndex(null);
               }}
               onToggleBlending={() => {
                 setPastedImages([]);
+                setEditImageIndex(null);
+                setEditDirectionIndex(null);
               }}
             />
           )}

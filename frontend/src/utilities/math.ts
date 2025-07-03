@@ -28,10 +28,17 @@ export const angleWithYAxis = (p1: Point, p2: Point) => {
   return degrees;
 };
 
-export const calculateRelativeImageSize = (baseSize: number, originalWidth: number, originalHeight: number) => {
-  const ratio = originalWidth / originalHeight
-  return {width: ratio > 1 ? baseSize : Math.ceil(baseSize * ratio), height: ratio > 1 ? Math.ceil(baseSize / ratio) : baseSize } 
-}
+export const calculateRelativeImageSize = (
+  baseSize: number,
+  originalWidth: number,
+  originalHeight: number
+) => {
+  const ratio = originalWidth / originalHeight;
+  return {
+    width: ratio > 1 ? baseSize : Math.ceil(baseSize * ratio),
+    height: ratio > 1 ? Math.ceil(baseSize / ratio) : baseSize,
+  };
+};
 
 export const isNear = (p1: Point, p2: Point, threshold = 10): boolean => {
   return (
@@ -79,9 +86,7 @@ export const generateCirclePoints = (
   return points;
 };
 
-export const floorPoints = (
-  points: Point[]
-): Point[] => {
+export const floorPoints = (points: Point[]): Point[] => {
   const flooredPoints: Point[] = [];
 
   for (let i = 0; i < points.length; i++) {
@@ -93,21 +98,206 @@ export const floorPoints = (
   return flooredPoints;
 };
 
-export const floorImages = (
-  images: PastedImage[]
-): PastedImage[] => {
+export const floorImages = (images: PastedImage[]): PastedImage[] => {
   const flooredImages: PastedImage[] = [];
 
   for (let i = 0; i < images.length; i++) {
-    flooredImages.push({ 
-      width:  Math.floor(images[i].width),
+    flooredImages.push({
+      width: Math.floor(images[i].width),
       height: Math.floor(images[i].height),
       left: Math.floor(images[i].left),
       top: Math.floor(images[i].top),
       imageId: images[i].imageId,
-      imageType: images[i].imageType
+      imageType: images[i].imageType,
     });
   }
 
   return flooredImages;
+};
+
+export const topLeftResize = (
+  top: number,
+  left: number,
+  width: number,
+  height: number,
+  newTop: number,
+  newLeft: number
+) => {
+  const newWidth = left - newLeft + width;
+  const newHeight = top - newTop + height;
+
+  return {
+    left: newLeft,
+    top: newTop,
+    width: Math.max(newWidth, 100),
+    height: Math.max(newHeight, 100),
+  };
+};
+
+export const topCenterResize = (
+  top: number,
+  left: number,
+  width: number,
+  height: number,
+  newTop: number,
+  _newLeft: number
+) => {
+  const newHeight = top - newTop + height;
+
+  return {
+    left,
+    top: newTop,
+    width,
+    height: Math.max(newHeight, 100),
+  };
+};
+
+export const topRightResize = (
+  top: number,
+  left: number,
+  _width: number,
+  height: number,
+  newTop: number,
+  newLeft: number
+) => {
+  const newWidth = newLeft - left;
+  const newHeight = top - newTop + height;
+  return {
+    left,
+    top: newTop,
+    width: Math.max(newWidth, 100),
+    height: Math.max(newHeight, 100),
+  };
+};
+
+export const middleLeftResize = (
+  top: number,
+  left: number,
+  width: number,
+  height: number,
+  _newTop: number,
+  newLeft: number
+) => {
+  const newWidth = left - newLeft + width;
+  return {
+    left: newLeft,
+    top,
+    width: Math.max(newWidth, 100),
+    height,
+  };
+};
+
+export const centerMove = (
+  _top: number,
+  _left: number,
+  width: number,
+  height: number,
+  newTop: number,
+  newLeft: number
+) => {
+  return {
+    left: newLeft - width / 2,
+    top: newTop - height / 2,
+    width,
+    height,
+  };
+};
+
+export const middleRightResize = (
+  top: number,
+  left: number,
+  _width: number,
+  height: number,
+  _newTop: number,
+  newLeft: number
+) => {
+  const newWidth = newLeft - left;
+  return {
+    left,
+    top,
+    width: Math.max(newWidth, 100),
+    height,
+  };
+};
+
+export const bottomLeftResize = (
+  top: number,
+  left: number,
+  width: number,
+  _height: number,
+  newTop: number,
+  newLeft: number
+) => {
+  const newWidth = left - newLeft + width;
+  const newHeight = newTop - top;
+  return {
+    left: newLeft,
+    top,
+    width: Math.max(newWidth, 100),
+    height: Math.max(newHeight, 100),
+  };
+};
+
+export const bottomCenterResize = (
+  top: number,
+  left: number,
+  width: number,
+  _height: number,
+  newTop: number,
+  _newLeft: number
+) => {
+  const newHeight = newTop - top;
+  return {
+    left,
+    top,
+    width,
+    height: Math.max(newHeight, 100),
+  };
+};
+
+export const bottomRightResize = (
+  top: number,
+  left: number,
+  _width: number,
+  _height: number,
+  newTop: number,
+  newLeft: number
+) => {
+  const newWidth = newLeft - left;
+  const newHeight = newTop - top;
+  return {
+    left,
+    top,
+    width: Math.max(newWidth, 100),
+    height: Math.max(newHeight, 100),
+  };
+};
+
+const resizeFns = [
+  topLeftResize,
+  topCenterResize,
+  topRightResize,
+  middleLeftResize,
+  centerMove,
+  middleRightResize,
+  bottomLeftResize,
+  bottomCenterResize,
+  bottomRightResize,
+];
+
+export const resizeImage = (
+  image: PastedImage,
+  position: Point,
+  directionIndex: number
+) => {
+  const resizeFn = resizeFns[directionIndex];
+
+  return resizeFn(
+    image.top,
+    image.left,
+    image.width,
+    image.height,
+    position.y,
+    position.x
+  );
 };

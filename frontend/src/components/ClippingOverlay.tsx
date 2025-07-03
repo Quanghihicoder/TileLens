@@ -64,7 +64,7 @@ export const ClippingOverlay: React.FC<ClippingOverlayProps> = ({
                 width: 12,
                 height: 12,
                 background: `${
-                  editPointIndex && editPointIndex == i
+                  editPointIndex != null && editPointIndex == i
                     ? "yellow"
                     : i === clippingPath.length - 1
                     ? "blue"

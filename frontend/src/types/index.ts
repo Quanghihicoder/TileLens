@@ -23,3 +23,10 @@ export type PastedImage = {
   imageId: string;
   imageType: string;
 };
+
+export type ImageHandler = {
+  directionIndex: number;
+  cursor: string;
+  left: number;
+  top: number;
+};
