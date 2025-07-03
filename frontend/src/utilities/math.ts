@@ -1,13 +1,4 @@
-export type Point = { x: number; y: number };
-
-type PastedImage = {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
-  imageId: string;
-  imageType: string;
-};
+import { type Point, type PastedImage } from "../types";
 
 // Calculate total of pixels from given points
 export const shoelaceArea = (polygon: Point[]) => {
