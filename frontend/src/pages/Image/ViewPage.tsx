@@ -11,6 +11,9 @@ import {
   isNear,
   type Point,
   calculateRelativeImageSize,
+  generateCirclePoints,
+  floorPoints,
+  floorImages,
 } from "../../utilities/math";
 import { GridDisplay } from "../../components/GridDisplay";
 import { ZoomControls } from "../../components/ZoomControls";
@@ -64,6 +67,10 @@ const ViewPage = () => {
   // Clipping state
   const [isClipping, setIsClipping] = useState(false);
   const [clippingPath, setClippingPath] = useState<Point[]>([]);
+  const [isEditClipping, setIsEditClipping] = useState(false);
+  const [editPointIndex, setEditPointIndex] = useState<number | null>(null);
+  const [isGenerateCircle, setIsGenerateCircle] = useState(false);
+  const draggingPointRef = useRef(false);
   const [isSendingClipping, setIsSendingClipping] = useState(false);
 
   // Blending state
@@ -162,6 +169,24 @@ const ViewPage = () => {
     [levelWidth, levelHeight, widthOverflow, heightOverflow, offset]
   );
 
+  const onLineBreak = (e: React.MouseEvent, index: number) => {
+    const position = calculateMousePosition(e);
+    if (position) {
+      setClippingPath((prev) => {
+        const newPath = [...prev];
+        newPath.splice(index + 1, 0, position);
+        return newPath;
+      });
+
+      if (editPointIndex) {
+        if (editPointIndex > index) {
+          const newEditIndex = editPointIndex + 1;
+          setEditPointIndex(newEditIndex);
+        }
+      }
+    }
+  };
+
   const onMouseEnter = () => {
     setIsHovered(true);
   };
@@ -169,11 +194,25 @@ const ViewPage = () => {
   const onMouseDown = (e: React.MouseEvent) => {
     if (isSendingClipping) return;
 
-    draggingRef.current = true;
+    const position = calculateMousePosition(e);
+    if (position) {
+      if (isGenerateCircle) {
+        setClippingPath(
+          generateCirclePoints(
+            position,
+            pastedImageBaseSize,
+            pastedImageBaseSize,
+            levelWidth,
+            levelHeight,
+            72
+          )
+        );
+        return;
+      }
 
-    if (isClipping) {
-      const position = calculateMousePosition(e);
-      if (position) {
+      draggingRef.current = true;
+
+      if (isClipping && !isEditClipping) {
         if (clippingPath.length == 0) {
           setClippingPath((prev) => [...prev, position]);
         } else {
@@ -185,10 +224,13 @@ const ViewPage = () => {
             );
           }
         }
+      } else {
+        if (editPointIndex && isNear(clippingPath[editPointIndex], position)) {
+          draggingPointRef.current = true;
+        }
+        dragStartRef.current = { x: e.clientX, y: e.clientY };
+        offsetStartRef.current = { ...offset };
       }
-    } else {
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-      offsetStartRef.current = { ...offset };
     }
   };
 
@@ -199,57 +241,74 @@ const ViewPage = () => {
     }
 
     if (!draggingRef.current || !dragStartRef.current) return;
-    if (isClipping) return;
+    if (isClipping && !isEditClipping) return;
+    if (draggingPointRef.current) return;
 
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
-
     const newOffsetX = offsetStartRef.current.x + dx;
     const newOffsetY = offsetStartRef.current.y + dy;
-
     const clamped = clampOffset(newOffsetX, newOffsetY);
-
     prevOffsetRef.current = clamped;
     setOffset(clamped);
   };
 
   const onMouseUp = (e: React.MouseEvent) => {
-    if (isClipping) {
-      const position = calculateMousePosition(e);
-      if (position) {
+    if (isGenerateCircle) {
+      setIsGenerateCircle(false);
+      return;
+    }
+
+    const position = calculateMousePosition(e);
+    if (position) {
+      if (isClipping && !isEditClipping) {
         setClippingPath((prev) => [...prev, position]);
       }
-      draggingRef.current = false;
-    } else {
-      draggingRef.current = false;
-      dragStartRef.current = null;
+
+      if (draggingPointRef.current && editPointIndex) {
+        if (position) {
+          const updated = [...clippingPath];
+          updated[editPointIndex] = position;
+          setClippingPath(updated);
+        }
+      }
     }
+
+    draggingPointRef.current = false;
+    draggingRef.current = false;
+    dragStartRef.current = null;
   };
 
   const onMouseLeave = (e: React.MouseEvent) => {
     setIsHovered(false);
+    const position = calculateMousePosition(e);
 
-    if (isClipping && draggingRef.current) {
-      const position = calculateMousePosition(e);
-
-      if (position) {
+    if (position) {
+      if (isClipping && draggingRef.current && !isEditClipping) {
         setClippingPath((prev) => [...prev, position]);
       }
-      draggingRef.current = false;
-    } else {
-      draggingRef.current = false;
-      dragStartRef.current = null;
+
+      if (draggingPointRef.current && editPointIndex && draggingRef.current) {
+        if (position) {
+          const updated = [...clippingPath];
+          updated[editPointIndex] = position;
+          setClippingPath(updated);
+        }
+      }
     }
+    draggingPointRef.current = false;
+    draggingRef.current = false;
+    dragStartRef.current = null;
   };
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
 
-      if (isClipping) {
-        alert("Can't zoom while clipping.");
-        return;
-      }
+      // if (isClipping) {
+      //   alert("Can't zoom while clipping.");
+      //   return;
+      // }
 
       const delta = Math.sign(e.deltaY);
       let newZoom = zoom;
@@ -311,14 +370,10 @@ const ViewPage = () => {
 
           // Need to ceil because sharp can't process float
           const pastedImage: PastedImage = {
-            width: Math.ceil(relativeSize.width),
-            height: Math.ceil(relativeSize.height),
-            left: Math.ceil(
-              mousePositionRef.current!.x - relativeSize.width / 2
-            ),
-            top: Math.ceil(
-              mousePositionRef.current!.y - relativeSize.height / 2
-            ),
+            width: relativeSize.width,
+            height: relativeSize.height,
+            left: mousePositionRef.current!.x - relativeSize.width / 2,
+            top: mousePositionRef.current!.y - relativeSize.height / 2,
             imageId: pastedImageId,
             imageType: response.data.image.imageType,
           };
@@ -349,7 +404,7 @@ const ViewPage = () => {
           imageId: imageId,
           width: levelWidth,
           height: levelHeight,
-          paths: clippingPath,
+          paths: floorPoints(clippingPath),
         },
         {
           withCredentials: true,
@@ -383,7 +438,7 @@ const ViewPage = () => {
           imageId: imageId,
           width: levelWidth,
           height: levelHeight,
-          pastedImages: pastedImages,
+          pastedImages: floorImages(pastedImages),
         },
         {
           withCredentials: true,
@@ -422,21 +477,37 @@ const ViewPage = () => {
   }, [handleWheel]);
 
   useEffect(() => {
+    let newClippingPath: Point[] = [];
+
+    for (let i = 0; i < clippingPath.length; i++) {
+      let point = clippingPath[i];
+
+      if (levelWidthBefore) {
+        point.x = (point.x / levelWidthBefore) * levelWidth;
+      }
+
+      if (levelHeightBefore) {
+        point.y = (point.y / levelHeightBefore) * levelHeight;
+      }
+
+      newClippingPath.push(point);
+    }
+
+    setClippingPath(newClippingPath);
+
     let newPastedImages: PastedImage[] = [];
 
     for (let i = 0; i < pastedImages.length; i++) {
       let image = pastedImages[i];
 
       if (levelWidthBefore) {
-        image.width = Math.ceil((image.width / levelWidthBefore) * levelWidth);
-        image.left = Math.ceil((image.left / levelWidthBefore) * levelWidth);
+        image.width = (image.width / levelWidthBefore) * levelWidth;
+        image.left = (image.left / levelWidthBefore) * levelWidth;
       }
 
       if (levelHeightBefore) {
-        image.height = Math.ceil(
-          (image.height / levelHeightBefore) * levelHeight
-        );
-        image.top = Math.ceil((image.top / levelHeightBefore) * levelHeight);
+        image.height = (image.height / levelHeightBefore) * levelHeight;
+        image.top = (image.top / levelHeightBefore) * levelHeight;
       }
 
       newPastedImages.push(image);
@@ -469,7 +540,12 @@ const ViewPage = () => {
                 ref={tilesContainerRef}
                 className="transition-transform duration-100 ease-in-out"
                 style={{
-                  cursor: draggingRef.current ? "grabbing" : "grab",
+                  cursor: (() => {
+                    if (!isClipping || isEditClipping) {
+                      return draggingRef.current ? "grabbing" : "grab";
+                    }
+                    return "crosshair";
+                  })(),
                   transform: `translate(${offset.x}px, ${offset.y}px) ${
                     transitionZoom !== null
                       ? `scale(${Math.pow(2, zoom - transitionZoom)})`
@@ -501,7 +577,13 @@ const ViewPage = () => {
                     />
                   );
                 })}
-                <ClippingOverlay clippingPath={clippingPath} />
+                <ClippingOverlay
+                  clippingPath={clippingPath}
+                  editPointIndex={editPointIndex}
+                  isEditClipping={isEditClipping}
+                  onLineBreak={onLineBreak}
+                  setEditPointIndex={setEditPointIndex}
+                />
                 <GridDisplay
                   userId={userId}
                   imageId={imageId!}
@@ -532,13 +614,26 @@ const ViewPage = () => {
           {pastedImages.length == 0 && (
             <ClippingControls
               isClipping={isClipping}
+              isEditClipping={isEditClipping}
               isSendingClipping={isSendingClipping}
+              isGenerateCircle={isGenerateCircle}
               onClip={async () => {
                 await clipImage();
+                setIsEditClipping(false);
+                setEditPointIndex(null);
               }}
               onToggleClipping={() => {
                 setClippingPath([]);
                 setIsClipping(!isClipping);
+                setIsEditClipping(false);
+                setEditPointIndex(null);
+              }}
+              onToggleEdit={() => {
+                setIsEditClipping(!isEditClipping);
+                setEditPointIndex(null);
+              }}
+              onGenerateCircle={() => {
+                setIsGenerateCircle(true);
               }}
             />
           )}

@@ -1,5 +1,14 @@
 export type Point = { x: number; y: number };
 
+type PastedImage = {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+  imageId: string;
+  imageType: string;
+};
+
 // Calculate total of pixels from given points
 export const shoelaceArea = (polygon: Point[]) => {
   const n = polygon.length;
@@ -53,4 +62,61 @@ export const getLevelMaxDimension = (
     Math.max(width, height) /
       2 ** (getNumberOfLevelsForImage(width, height) - 1 - zoomLevel)
   );
+};
+
+export const generateCirclePoints = (
+  center: Point,
+  width: number,
+  height: number,
+  maxWidth: number,
+  maxHeight: number,
+  pointCount: number = 36
+): Point[] => {
+  const radius = Math.min(width, height) / 2;
+  const points: Point[] = [];
+
+  for (let i = 0; i < pointCount; i++) {
+    const angle = (2 * Math.PI * i) / pointCount;
+    const x = center.x + radius * Math.cos(angle);
+    const y = center.y + radius * Math.sin(angle);
+
+    if (x >= 0 && y >= 0 && x <= maxWidth && y <= maxHeight) {
+      points.push({ x, y });
+    }
+  }
+
+  return points;
+};
+
+export const floorPoints = (
+  points: Point[]
+): Point[] => {
+  const flooredPoints: Point[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    const x = Math.floor(points[i].x);
+    const y = Math.floor(points[i].y);
+    flooredPoints.push({ x, y });
+  }
+
+  return flooredPoints;
+};
+
+export const floorImages = (
+  images: PastedImage[]
+): PastedImage[] => {
+  const flooredImages: PastedImage[] = [];
+
+  for (let i = 0; i < images.length; i++) {
+    flooredImages.push({ 
+      width:  Math.floor(images[i].width),
+      height: Math.floor(images[i].height),
+      left: Math.floor(images[i].left),
+      top: Math.floor(images[i].top),
+      imageId: images[i].imageId,
+      imageType: images[i].imageType
+    });
+  }
+
+  return flooredImages;
 };
