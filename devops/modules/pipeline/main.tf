@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "codepipeline_bucket" {
 
 resource "aws_codestarconnections_connection" "github_connection" {
   name          = "github-connection"
-  provider_type = "GitHubApps"
+  provider_type = "GitHub"
 }
 
 data "aws_secretsmanager_secret" "github_token" {
@@ -309,7 +309,6 @@ resource "aws_codebuild_project" "frontend_build" {
     type      = "CODEPIPELINE"
     buildspec = "devops/modules/pipeline/spec/frontendbuild.yml"
   }
-
 }
 
 # Pipeline
