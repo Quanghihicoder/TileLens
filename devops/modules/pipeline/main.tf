@@ -337,6 +337,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
         ConnectionArn    = aws_codestarconnections_connection.github_connection.arn
         FullRepositoryId = var.github_fullrepository
         BranchName       = "production"
+        DetectChanges    = false # Disable automatic triggering, this will be done by GitHub Actions
       }
     }
   }
