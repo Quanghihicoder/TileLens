@@ -187,7 +187,7 @@ resource "aws_codebuild_project" "tiling_lambda_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
+    buildspec = "devops/modules/pipeline/spec/lambdabuild.yml"
   }
 }
 
@@ -215,7 +215,7 @@ resource "aws_codebuild_project" "clipping_lambda_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
+    buildspec = "devops/modules/pipeline/spec/lambdabuild.yml"
   }
 }
 
@@ -242,7 +242,7 @@ resource "aws_codebuild_project" "blending_lambda_build" {
   }
   source {
     type      = "CODEPIPELINE"
-    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
+    buildspec = "devops/modules/pipeline/spec/lambdabuild.yml"
   }
 }
 
@@ -284,7 +284,7 @@ resource "aws_codebuild_project" "ecs_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "/devops/modules/pipeline/spec/ecsbuild.yml"
+    buildspec = "devops/modules/pipeline/spec/ecsbuild.yml"
   }
 
 }
@@ -307,7 +307,7 @@ resource "aws_codebuild_project" "frontend_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "/devops/modules/pipeline/spec/frontendbuild.yml"
+    buildspec = "devops/modules/pipeline/spec/frontendbuild.yml"
   }
 
 }
