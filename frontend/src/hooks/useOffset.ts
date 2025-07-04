@@ -56,8 +56,8 @@ export const useOffset = (
     const centerY = tilesContainer.clientHeight / 2;
 
     // Convert screen center to world coordinates before zoom
-    if (!maxNumberOfTilesXBefore) return null;
-    if (!maxNumberOfTilesYBefore) return null;
+    if (maxNumberOfTilesXBefore == null) return null;
+    if (maxNumberOfTilesYBefore == null) return null;
 
     // New offset to keep the same world point centered
     const worldX =
