@@ -1,6 +1,9 @@
 name: Apply changes to Production
 
 on:
+  # push:
+  #   branches:
+  #     - production
   pull_request:
     branches:
       - production
