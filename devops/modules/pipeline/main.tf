@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "codepipeline_bucket" {
 
 resource "aws_codestarconnections_connection" "github_connection" {
   name          = "github-connection"
-  provider_type = "GitHub"
+  provider_type = "GitHubApps"
 }
 
 data "aws_secretsmanager_secret" "github_token" {
@@ -519,4 +519,6 @@ resource "aws_codepipeline" "tilelens_pipeline" {
       }
     }
   }
+
+  depends_on = [aws_codestarconnections_connection.github_connection]
 }
