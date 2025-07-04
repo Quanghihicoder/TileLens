@@ -236,7 +236,7 @@ module "pipeline" {
   source = "./modules/pipeline"
 
   aws_region           = var.aws_region
-  github_token         = var.github_token
+  github_token         = var.github_secret_arn
   frontend_bucket_arn  = module.s3.frontend_bucket_arn
   frontend_bucket_name = local.app_buckets.frontend.name
   tiling_lambda_name   = local.lambdas.tiling_lambda.name
