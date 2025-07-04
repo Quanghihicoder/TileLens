@@ -8,11 +8,6 @@ variable "github_url" {
   default = "https://github.com/Quanghihicoder/TileLens.git"
 }
 
-variable "github_token" {
-  description = "AWS Secrets Manager ARN or plaintext (not recommended)"
-  type        = string
-}
-
 variable "github_fullrepository" {
   type    = string
   default = "Quanghihicoder/TileLens"

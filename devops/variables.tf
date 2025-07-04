@@ -6,9 +6,6 @@ variable "region_id" {
   description = "ID of the AWS Region"
   type        = string
 }
-variable "github_secret_arn" {
-  type = string
-}
 variable "hosted_zone_id" {
   description = "ID of the existing hosted zone"
   type        = string

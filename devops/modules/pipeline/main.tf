@@ -9,6 +9,14 @@ resource "aws_codestarconnections_connection" "github_connection" {
   provider_type = "GitHub"
 }
 
+data "aws_secretsmanager_secret" "github_token" {
+  name = "AWSGitHub"
+}
+
+data "aws_secretsmanager_secret_version" "github_token" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
+}
+
 
 # ========== IAM Roles ==========
 resource "aws_iam_role" "codebuild_role" {
@@ -164,7 +172,7 @@ resource "aws_codebuild_project" "tiling_lambda_build" {
     buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
     auth {
       type     = "OAUTH"
-      resource = var.github_token
+      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
     }
   }
 
@@ -200,7 +208,7 @@ resource "aws_codebuild_project" "clipping_lambda_build" {
     buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
     auth {
       type     = "OAUTH"
-      resource = var.github_token
+      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
     }
   }
 
@@ -236,7 +244,7 @@ resource "aws_codebuild_project" "blending_lambda_build" {
     buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
     auth {
       type     = "OAUTH"
-      resource = var.github_token
+      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
     }
   }
 
@@ -287,7 +295,7 @@ resource "aws_codebuild_project" "ecs_build" {
 
     auth {
       type     = "OAUTH"
-      resource = var.github_token
+      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
     }
   }
 
@@ -318,7 +326,7 @@ resource "aws_codebuild_project" "frontend_build" {
 
     auth {
       type     = "OAUTH"
-      resource = var.github_token
+      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
     }
   }
 
