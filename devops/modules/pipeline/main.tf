@@ -175,7 +175,7 @@ resource "aws_codebuild_project" "tiling_lambda_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:6.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
 
@@ -203,7 +203,7 @@ resource "aws_codebuild_project" "clipping_lambda_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:6.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
 
@@ -231,7 +231,7 @@ resource "aws_codebuild_project" "blending_lambda_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:6.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
 
@@ -257,7 +257,7 @@ resource "aws_codebuild_project" "ecs_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:6.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
 
@@ -300,7 +300,7 @@ resource "aws_codebuild_project" "frontend_build" {
 
   environment {
     compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:6.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true
   }

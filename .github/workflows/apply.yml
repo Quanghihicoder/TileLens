@@ -1,11 +1,14 @@
 name: Apply changes to Production
 
 on:
-  pull_request:
+  push:
     branches:
       - production
-    types: [closed]
-    if: github.event.pull_request.merged == true
+  # pull_request:
+  #   branches:
+  #     - production
+  #   types: [closed]
+  #   if: github.event.pull_request.merged == true
 
 jobs:
   terraform-apply:
