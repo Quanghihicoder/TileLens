@@ -1,0 +1,37 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo "Installing dependencies..."
+      - apt-get update -y && apt-get install -y zip
+      - nohup /usr/local/bin/dockerd-entrypoint.sh &>/tmp/docker.log &
+      - timeout 15 sh -c "until docker info; do sleep 1; done"
+      - echo "Docker is ready."
+
+  pre_build:
+    commands:
+      - echo "Cleaning up old builds..."
+      - rm -rf ./build/${FUNCTION_NAME}_lambda.zip
+      - mkdir -p ./build/${FUNCTION_NAME}_lambda
+
+  build:
+    commands:
+      - echo "Building Lambda in Docker..."
+      - docker buildx build --platform linux/amd64 -f /worker/${FUNCTION_NAME}_image/Dockerfile.lambda-build -t ${FUNCTION_NAME}-lambda-builder --load .
+      - |
+        echo "Extracting build artifact from container..."
+        CONTAINER_ID=$(docker create ${FUNCTION_NAME}-lambda-builder)
+        docker cp $CONTAINER_ID:/var/task/dist ./build/${FUNCTION_NAME}_lambda
+        docker rm $CONTAINER_ID
+      - echo "Zipping build artifact..."
+      - cd ./build/${FUNCTION_NAME}_lambda/dist
+      - zip -r ../../${FUNCTION_NAME}_lambda.zip .
+      - cd ../../../
+      - rm -rf ./build/${FUNCTION_NAME}_lambda
+
+artifacts:
+  files:
+    - build/${FUNCTION_NAME}_lambda.zip

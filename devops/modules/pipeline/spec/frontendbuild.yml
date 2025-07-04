@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing dependencies..."
+      - cd frontend && npm install
+
+  build:
+    commands:
+      - echo "Building Frontend app..."
+      - cd frontend && npm run build
+      - cd ..
+      - mkdir -p build/frontend
+      - cp -r frontend/dist/* build/frontend
+
+artifacts:
+  base-directory: build/frontend
+  files:
+    - "**/*"

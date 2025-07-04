@@ -231,3 +231,17 @@ module "route53" {
 
   depends_on = [module.cdn, module.alb]
 }
+
+module "pipeline" {
+  source = "./modules/pipeline"
+
+  aws_region           = var.aws_region
+  github_token         = var.github_token
+  frontend_bucket_arn  = module.s3.frontend_bucket_arn
+  frontend_bucket_name = local.app_buckets.frontend.name
+  tiling_lambda_name   = local.lambdas.tiling_lambda.name
+  clipping_lambda_name = local.lambdas.clipping_lambda.name
+  blending_lambda_name = local.lambdas.blending_lambda.name
+  ecs_cluster_name     = module.ecs.ecs_cluster_name
+  ecs_service_name     = module.ecs.ecs_service_name
+}

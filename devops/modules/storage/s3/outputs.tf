@@ -2,6 +2,10 @@ output "assets_bucket_arn" {
   value = aws_s3_bucket.app_buckets["assets"].arn
 }
 
+output "frontend_bucket_arn" {
+  value = aws_s3_bucket.app_buckets["frontend"].arn
+}
+
 output "alb_logs_bucket" {
   value = aws_s3_bucket.logs_buckets["alb"].bucket
 }
