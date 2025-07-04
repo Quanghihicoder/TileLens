@@ -17,7 +17,6 @@ data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
-
 # ========== IAM Roles ==========
 resource "aws_iam_role" "codebuild_role" {
   name = "tilelens-codebuild-role"
@@ -71,6 +70,13 @@ resource "aws_iam_policy" "codebuild_policy" {
           var.frontend_bucket_arn,
           "${var.frontend_bucket_arn}/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = data.aws_secretsmanager_secret.github_token.arn
       }
     ]
   })
@@ -132,6 +138,13 @@ resource "aws_iam_policy" "codepipeline_policy" {
           "iam:PassRole",
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = data.aws_secretsmanager_secret.github_token.arn
       }
     ]
   })
@@ -143,6 +156,13 @@ resource "aws_iam_role_policy_attachment" "codepipeline_attach_policy" {
 }
 
 # ========== CodeBuild ==========
+
+resource "aws_codebuild_source_credential" "github_token" {
+  auth_type   = "PERSONAL_ACCESS_TOKEN"
+  server_type = "GITHUB"
+  token       = data.aws_secretsmanager_secret_version.github_token.secret_string
+}
+
 resource "aws_codebuild_project" "tiling_lambda_build" {
   name          = "tiling-lambda-build-project"
   description   = "Build project for Tiling Lambda function"
@@ -166,17 +186,9 @@ resource "aws_codebuild_project" "tiling_lambda_build" {
   }
 
   source {
-    type            = "GITHUB"
-    location        = var.github_url
-    git_clone_depth = 1
-    buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
-    auth {
-      type     = "OAUTH"
-      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
-    }
+    type      = "CODEPIPELINE"
+    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
   }
-
-  source_version = "production"
 }
 
 resource "aws_codebuild_project" "clipping_lambda_build" {
@@ -202,17 +214,9 @@ resource "aws_codebuild_project" "clipping_lambda_build" {
   }
 
   source {
-    type            = "GITHUB"
-    location        = var.github_url
-    git_clone_depth = 1
-    buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
-    auth {
-      type     = "OAUTH"
-      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
-    }
+    type      = "CODEPIPELINE"
+    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
   }
-
-  source_version = "production"
 }
 
 resource "aws_codebuild_project" "blending_lambda_build" {
@@ -236,19 +240,10 @@ resource "aws_codebuild_project" "blending_lambda_build" {
       value = "blending"
     }
   }
-
   source {
-    type            = "GITHUB"
-    location        = var.github_url
-    git_clone_depth = 1
-    buildspec       = "/devops/modules/pipeline/spec/lambdabuild.yml"
-    auth {
-      type     = "OAUTH"
-      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
-    }
+    type      = "CODEPIPELINE"
+    buildspec = "/devops/modules/pipeline/spec/lambdabuild.yml"
   }
-
-  source_version = "production"
 }
 
 resource "aws_codebuild_project" "ecs_build" {
@@ -288,18 +283,10 @@ resource "aws_codebuild_project" "ecs_build" {
   }
 
   source {
-    type            = "GITHUB"
-    location        = var.github_url
-    git_clone_depth = 1
-    buildspec       = "/devops/modules/pipeline/spec/ecsbuild.yml"
-
-    auth {
-      type     = "OAUTH"
-      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
-    }
+    type      = "CODEPIPELINE"
+    buildspec = "/devops/modules/pipeline/spec/ecsbuild.yml"
   }
 
-  source_version = "production"
 }
 
 resource "aws_codebuild_project" "frontend_build" {
@@ -319,18 +306,10 @@ resource "aws_codebuild_project" "frontend_build" {
   }
 
   source {
-    type            = "GITHUB"
-    location        = var.github_url
-    git_clone_depth = 1
-    buildspec       = "/devops/modules/pipeline/spec/frontendbuild.yml"
-
-    auth {
-      type     = "OAUTH"
-      resource = data.aws_secretsmanager_secret_version.github_token.secret_string
-    }
+    type      = "CODEPIPELINE"
+    buildspec = "/devops/modules/pipeline/spec/frontendbuild.yml"
   }
 
-  source_version = "production"
 }
 
 # Pipeline
@@ -363,7 +342,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Build Tiling Lambda"
+    name = "Build_Tiling_Lambda"
 
     action {
       name             = "BuildTiling"
@@ -381,7 +360,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Build Clipping Lambda"
+    name = "Build_Clipping_Lambda"
 
     action {
       name             = "BuildClipping"
@@ -399,7 +378,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Build Blending Lambda"
+    name = "Build_Blending_Lambda"
 
     action {
       name             = "BuildBlending"
@@ -417,7 +396,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Build Backend"
+    name = "Build_Backend"
 
     action {
       name             = "BuildBackend"
@@ -435,7 +414,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Build Frontend"
+    name = "Build_Frontend"
 
     action {
       name             = "BuildFrontend"
@@ -453,7 +432,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Deploy Tiling Lambda"
+    name = "Deploy_Tiling_Lambda"
 
     action {
       name            = "DeployTiling"
@@ -470,7 +449,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Deploy Clipping Lambda"
+    name = "Deploy_Clipping_Lambda"
 
     action {
       name            = "DeployClipping"
@@ -487,7 +466,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Deploy Blending Lambda"
+    name = "Deploy_Blending_Lambda"
 
     action {
       name            = "DeployBlending"
@@ -504,7 +483,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Deploy Backend"
+    name = "Deploy_Backend"
 
     action {
       name            = "DeployBackend"
@@ -523,7 +502,7 @@ resource "aws_codepipeline" "tilelens_pipeline" {
   }
 
   stage {
-    name = "Deploy Frontend"
+    name = "Deploy_Frontend"
 
     action {
       name            = "DeployFrontend"
