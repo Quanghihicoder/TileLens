@@ -104,6 +104,8 @@ AWS Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), RDS (MySQL), DynamoDB
 - MySQL -> Amazon RDS (MySQL)
 - MongoDB -> Amazon DynamoDB
 
+![Infras](https://github.com/Quanghihicoder/TileLens/blob/master/sample_images/infras.png)
+
 # 🔁 System Flow
 
 ## Login
