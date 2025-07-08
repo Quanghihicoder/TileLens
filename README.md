@@ -9,7 +9,7 @@ Give me a ⭐️ if you like this project.
 # 🌐 Live Demo
 
 - App (available Mon-Fri, 9AM - 5PM AEST): https://tilelens.quangtechnologies.com
-- Feature Demo: https://www.youtube.com/watch?v=ha4Pr96QHzM
+- Feature Demo: https://www.youtube.com/watch?v=YjK48oZDZO8
 - Setup & Run Walkthrough: https://youtu.be/aLDVqkwxHoc
 
 # 🚀 TL;DR - How to Run Locally - A Single Container
