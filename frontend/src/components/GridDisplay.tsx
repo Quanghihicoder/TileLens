@@ -57,7 +57,7 @@ export const GridDisplay = ({
             opacity: 1,
           }}
           crossOrigin={
-            environment === "development" ? "use-credentials" : undefined
+            environment === "development" ? "use-credentials" : "anonymous"
           }
         />
       ))}

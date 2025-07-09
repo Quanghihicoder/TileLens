@@ -45,6 +45,17 @@ resource "aws_s3_bucket_public_access_block" "logs_buckets_public_access" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_cors_configuration" "assets_bucket_cors" {
+  bucket = aws_s3_bucket.app_buckets["assets"].id
+
+  cors_rule {
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+  }
+}
+
 resource "aws_s3_bucket_policy" "app_buckets_public_policy" {
   for_each = aws_s3_bucket.app_buckets
 

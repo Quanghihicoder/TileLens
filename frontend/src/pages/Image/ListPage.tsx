@@ -161,7 +161,9 @@ const ImageList = () => {
                 src={imgUrl(userId, img.imageId, img.imageType)}
                 alt={`Preview of ${img.imageOriginalName}`}
                 crossOrigin={
-                  environment === "development" ? "use-credentials" : undefined
+                  environment === "development"
+                    ? "use-credentials"
+                    : "anonymous"
                 }
                 className="w-full sm:w-40 max-h-64 object-contain rounded-md mb-4 sm:mb-0 sm:mr-6"
               />
