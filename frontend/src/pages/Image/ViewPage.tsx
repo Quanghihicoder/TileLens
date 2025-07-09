@@ -28,6 +28,8 @@ import {
   type ImageHandler,
 } from "../../types";
 import { BlendingOverlay } from "../../components/BlendingOverlay";
+import { BoxDisplay } from "../../components/BoxDisplay";
+import { ThreeControls } from "../../components/ThreeDControls";
 
 const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -80,6 +82,9 @@ const ViewPage = () => {
     null
   );
   const isResizeImageRef = useRef(false);
+
+  // 3D state
+  const [isThreeDViewing, setIsThreeDViewing] = useState<boolean>(false);
 
   // Image data
   const {
@@ -445,11 +450,6 @@ const ViewPage = () => {
     (e: WheelEvent) => {
       e.preventDefault();
 
-      // if (isClipping) {
-      //   alert("Can't zoom while clipping.");
-      //   return;
-      // }
-
       const delta = Math.sign(e.deltaY);
       let newZoom = zoom;
 
@@ -656,6 +656,12 @@ const ViewPage = () => {
     setPastedImages(newPastedImages);
   }, [zoom]);
 
+  useEffect(() => {
+    if (widthOverflow || heightOverflow) {
+      setIsThreeDViewing(false);
+    }
+  }, [widthOverflow, heightOverflow]);
+
   return (
     <>
       <div className="flex-1 w-full relative overflow-hidden">
@@ -673,49 +679,8 @@ const ViewPage = () => {
                 !widthOverflow && "flex justify-center"
               } ${!heightOverflow && "flex items-center"} `}
             >
-              <div
-                ref={tilesContainerRef}
-                className="transition-transform duration-100 ease-in-out"
-                style={{
-                  cursor: (() => {
-                    if (!isClipping || isEditClipping) {
-                      return draggingRef.current ? "grabbing" : "grab";
-                    }
-                    return "crosshair";
-                  })(),
-                  transform: `translate(${offset.x}px, ${offset.y}px) ${
-                    transitionZoom !== null
-                      ? `scale(${Math.pow(2, zoom - transitionZoom)})`
-                      : "scale(1)"
-                  }`,
-                }}
-                onTransitionEnd={() => setTransitionZoom(null)}
-                onMouseEnter={onMouseEnter}
-                onMouseDown={onMouseDown}
-                onMouseMove={onMouseMove}
-                onMouseUp={onMouseUp}
-                onMouseLeave={onMouseLeave}
-                onPaste={isHovered && !isClipping ? handlePaste : undefined}
-                onDoubleClick={onDoubleClick}
-                tabIndex={0}
-              >
-                <BlendingOverlay
-                  images={pastedImages}
-                  handles={handles}
-                  userId={userId}
-                  editImageIndex={editImageIndex}
-                  setEditImageIndex={setEditImageIndex}
-                  editDirectionIndex={editDirectionIndex}
-                  setEditDirectionIndex={setEditDirectionIndex}
-                />
-                <ClippingOverlay
-                  clippingPath={clippingPath}
-                  editPointIndex={editPointIndex}
-                  isEditClipping={isEditClipping}
-                  onLineBreak={onLineBreak}
-                  setEditPointIndex={setEditPointIndex}
-                />
-                <GridDisplay
+              {!widthOverflow && !heightOverflow && isThreeDViewing && (
+                <BoxDisplay
                   userId={userId}
                   imageId={imageId!}
                   levelWidth={levelWidth}
@@ -724,9 +689,76 @@ const ViewPage = () => {
                   offset={offset}
                   containerRef={windowContainerRef}
                 />
-              </div>
+              )}
+
+              {!isThreeDViewing && (
+                <div
+                  ref={tilesContainerRef}
+                  className="transition-transform duration-100 ease-in-out"
+                  style={{
+                    cursor: (() => {
+                      if (!isClipping || isEditClipping) {
+                        return draggingRef.current ? "grabbing" : "grab";
+                      }
+                      return "crosshair";
+                    })(),
+                    transform: `translate(${offset.x}px, ${offset.y}px) ${
+                      transitionZoom !== null
+                        ? `scale(${Math.pow(2, zoom - transitionZoom)})`
+                        : "scale(1)"
+                    }`,
+                  }}
+                  onTransitionEnd={() => setTransitionZoom(null)}
+                  onMouseEnter={onMouseEnter}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={onMouseLeave}
+                  onPaste={isHovered && !isClipping ? handlePaste : undefined}
+                  onDoubleClick={onDoubleClick}
+                  tabIndex={0}
+                >
+                  <BlendingOverlay
+                    images={pastedImages}
+                    handles={handles}
+                    userId={userId}
+                    editImageIndex={editImageIndex}
+                    setEditImageIndex={setEditImageIndex}
+                    editDirectionIndex={editDirectionIndex}
+                    setEditDirectionIndex={setEditDirectionIndex}
+                  />
+                  <ClippingOverlay
+                    clippingPath={clippingPath}
+                    editPointIndex={editPointIndex}
+                    isEditClipping={isEditClipping}
+                    onLineBreak={onLineBreak}
+                    setEditPointIndex={setEditPointIndex}
+                  />
+                  <GridDisplay
+                    userId={userId}
+                    imageId={imageId!}
+                    levelWidth={levelWidth}
+                    levelHeight={levelHeight}
+                    zoom={zoom}
+                    offset={offset}
+                    containerRef={windowContainerRef}
+                  />
+                </div>
+              )}
             </div>
           </div>
+
+          {!isClipping &&
+            pastedImages.length == 0 &&
+            !widthOverflow &&
+            !heightOverflow && (
+              <ThreeControls
+                isThreeDViewing={isThreeDViewing}
+                onToggleThreeDViewing={() => {
+                  setIsThreeDViewing(!isThreeDViewing);
+                }}
+              />
+            )}
 
           {/* Blending Buttons */}
           {pastedImages.length > 0 && (
@@ -746,7 +778,7 @@ const ViewPage = () => {
           )}
 
           {/* Clipping Buttons */}
-          {pastedImages.length == 0 && (
+          {pastedImages.length == 0 && !isThreeDViewing && (
             <ClippingControls
               isClipping={isClipping}
               isEditClipping={isEditClipping}
