@@ -18,7 +18,7 @@ export const ThreeControls: React.FC<ThreeDControlsProps> = ({
         onClick={onToggleThreeDViewing}
       >
         <div className="w-9 h-9 rounded-full bg-white shadow-md border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400 text-xl">
-          🧊
+          3D
         </div>
       </button>
     </div>
