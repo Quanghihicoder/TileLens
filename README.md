@@ -66,6 +66,8 @@ ReactJS, Redux, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Dock
 
 AWS Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), RDS (MySQL), DynamoDB
 
+GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
+
 # 📦 Stack Breakdown
 
 ## Frontend 
