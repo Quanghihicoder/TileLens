@@ -30,6 +30,7 @@ import {
 import { BlendingOverlay } from "../../components/BlendingOverlay";
 import { BoxDisplay } from "../../components/BoxDisplay";
 import { ThreeControls } from "../../components/ThreeDControls";
+import { useNotification } from "../../providers/Notification";
 
 const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -37,6 +38,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 const ViewPage = () => {
   const { imageId } = useParams<{ imageId: string }>();
   const navigate = useNavigate();
+  const showNotification = useNotification();
 
   // Get user ID from Redux or fallback to localStorage
   const reduxUserId = useAppSelector((state: RootState) => state.user.id);
@@ -296,8 +298,9 @@ const ViewPage = () => {
           const last = clippingPath[clippingPath.length - 1];
           if (!isNear(last, position)) {
             draggingRef.current = false;
-            alert(
-              "The starting point of the next line should be near the end of the previous line."
+            showNotification(
+              "The starting point of the next line should be near the end of the previous line.",
+              "error"
             );
           }
         }
@@ -356,7 +359,7 @@ const ViewPage = () => {
 
     const position = calculateMousePosition(e);
     if (position) {
-      if (isClipping && !isEditClipping) {
+      if (isClipping && !isEditClipping && draggingRef.current) {
         setClippingPath((prev) => [...prev, position]);
       }
 
@@ -471,8 +474,9 @@ const ViewPage = () => {
     e.preventDefault();
 
     if (pastedImages.length == 20) {
-      alert(
-        "You can only paste maximum 20 images. Save the image and then continue paste from there."
+      showNotification(
+        "You can only paste maximum 20 images. Save the image and then continue paste from there.",
+        "error"
       );
       return;
     }
@@ -484,7 +488,7 @@ const ViewPage = () => {
       if (nanoidRegex.test(pastedText)) {
         await getImage(pastedText);
       } else {
-        alert("Invalid image to paste");
+        showNotification("Invalid image to paste.", "error");
       }
     } catch (error) {
       console.error("Error reading clipboard data:", error);
@@ -520,18 +524,18 @@ const ViewPage = () => {
 
           setPastedImages((prevImages) => [...prevImages, pastedImage]);
         } else {
-          alert("Invalid image to paste");
+          showNotification("Invalid image to paste.", "error");
         }
       }
     } catch (err) {
       console.error("Error pasting image:", err);
-      alert("Invalid image to paste");
+      showNotification("Invalid image to paste.", "error");
     }
   };
 
   const clipImage = async () => {
     if (clippingPath.length < 3) {
-      alert("Invalid clipping shape");
+      showNotification("Invalid clipping shape.", "error");
       return;
     }
 
@@ -552,7 +556,10 @@ const ViewPage = () => {
       );
 
       if (response) {
-        alert("Clip request sent successfully. Image will be in my images.");
+        showNotification(
+          "Clip request sent successfully. Image will be in my images.",
+          "success"
+        );
       }
     } catch (err) {
       console.error("Error clipping image:", err);
@@ -565,7 +572,7 @@ const ViewPage = () => {
 
   const blendImage = async () => {
     if (pastedImages.length == 0) {
-      alert("Invalid blend");
+      showNotification("Invalid blend.", "error");
       return;
     }
 
@@ -586,7 +593,10 @@ const ViewPage = () => {
       );
 
       if (response) {
-        alert("Blend request sent successfully. Image will be in my images.");
+        showNotification(
+          "Blend request sent successfully. Image will be in my images.",
+          "success"
+        );
       }
     } catch (err) {
       console.error("Error blending image:", err);

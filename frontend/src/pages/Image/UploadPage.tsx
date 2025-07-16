@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent } from "react";
 import axios from "axios";
+import { useNotification } from "../../providers/Notification";
 
 interface ImageDimensions {
   width: number;
@@ -16,6 +17,8 @@ const MAX_FILE_SIZE_MB = 50;
 const apiUrl = import.meta.env.VITE_API_URL;
 
 const ImageUpload = () => {
+  const showNotification = useNotification();
+
   const [image, setImage] = useState<string | null>(null);
   const [imageDimensions, setImageDimensions] =
     useState<ImageDimensions | null>(null);
@@ -48,7 +51,10 @@ const ImageUpload = () => {
       const isTooLarge = selected.size > MAX_FILE_SIZE_MB * 1024 * 1024;
 
       if (isTooLarge) {
-        alert("File is too large. Maximum allowed size is 50MB.");
+        showNotification(
+          "File is too large. Maximum allowed size is 50MB.",
+          "error"
+        );
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -72,7 +78,7 @@ const ImageUpload = () => {
       img.src = objectUrl;
       setFile(selected);
     } else {
-      alert("Only PNG and JPG/JPEG files are allowed.");
+      showNotification("Only PNG and JPG/JPEG files are allowed.", "error");
     }
   };
 
@@ -92,7 +98,7 @@ const ImageUpload = () => {
         },
       });
 
-      alert("Image uploaded successfully!");
+      showNotification("Image uploaded successfully!", "success");
 
       setImage(null);
       setImageDimensions(null);
@@ -103,7 +109,7 @@ const ImageUpload = () => {
       }
     } catch (error) {
       console.error("Error uploading:", error);
-      alert("Failed to upload image.");
+      showNotification("Failed to upload image.", "error");
     } finally {
       setLoading(false);
     }

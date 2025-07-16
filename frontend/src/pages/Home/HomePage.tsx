@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAppDispatch, useAppSelector } from "../../hooks/useRedux";
 import { setUser } from "../../features/user/userSlice";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../providers/Notification";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -13,6 +14,7 @@ const Home = () => {
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const showNotification = useNotification();
 
   // If already logged in, redirect
   const user = useAppSelector((state) => state.user);
@@ -51,7 +53,7 @@ const Home = () => {
       }
     } catch (error) {
       console.error("Error login:", error);
-      alert("Failed to login.");
+      showNotification("Failed to login.", "error");
     } finally {
       setLoading(false);
     }
