@@ -44,6 +44,7 @@ export const ClippingOverlay: React.FC<ClippingOverlayProps> = ({
               background: `${i === clippingPath.length - 1 ? "blue" : "red"}`,
             }}
             onClick={(e) => {
+              if (!isEditClipping) return;
               if (i !== clippingPath.length - 1) {
                 e.stopPropagation();
                 onLineBreak(e, i);
@@ -52,6 +53,8 @@ export const ClippingOverlay: React.FC<ClippingOverlayProps> = ({
           >
             <div
               onClick={(e) => {
+                if (!isEditClipping) return;
+
                 e.stopPropagation();
                 setEditPointIndex(i);
               }}
