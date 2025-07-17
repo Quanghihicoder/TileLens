@@ -1,13 +1,11 @@
 import React from "react";
 
 interface ZoomControlsProps {
-  isClipping: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
 }
 
 export const ZoomControls: React.FC<ZoomControlsProps> = ({
-  isClipping,
   onZoomIn,
   onZoomOut,
 }) => {
