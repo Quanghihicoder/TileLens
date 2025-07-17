@@ -817,7 +817,6 @@ const ViewPage = () => {
 
           {/* Zoom Buttons */}
           <ZoomControls
-            isClipping={isClipping}
             onZoomIn={() => {
               if (zoom < maxZoomLevel) {
                 setTransitionZoom(zoom + 1);
