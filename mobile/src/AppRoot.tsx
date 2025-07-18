@@ -8,6 +8,9 @@ import { useEffect, useState } from 'react';
 import ListScreen from './screens/Image/ListScreen';
 import AuthScreen from './screens/Auth/AuthScreen';
 import { ActivityIndicator, View } from 'react-native';
+import UploadScreen from './screens/Image/UploadScreen';
+import ViewScreen from './screens/Image/ViewScreen';
+import AccountScreen from './screens/Account/AccountScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -30,7 +33,17 @@ function AppTabs() {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="ImageList" component={ListScreen} />
+      <Tab.Screen
+        name="ImageList"
+        component={ListScreen}
+        options={{ tabBarLabel: 'My Images' }}
+      />
+      <Tab.Screen
+        name="ImageUpload"
+        component={UploadScreen}
+        options={{ tabBarLabel: 'Upload Image' }}
+      />
+      <Tab.Screen name="Account" component={AccountScreen} />
     </Tab.Navigator>
   );
 }
@@ -61,6 +74,7 @@ function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Main" component={AppTabs} />
+        <Stack.Screen name="ImageView" component={ViewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
