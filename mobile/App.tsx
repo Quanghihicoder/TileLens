@@ -1,20 +1,15 @@
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from './src/screens/Home/HomeScreen';
-
-const Stack = createNativeStackNavigator();
+import { NotificationProvider } from './src/providers/Notification';
+import { Provider } from 'react-redux';
+import { store } from './src/app/store';
+import AppRoot from './src/AppRoot';
 
 function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Provider store={store}>
+      <NotificationProvider>
+        <AppRoot />
+      </NotificationProvider>
+    </Provider>
   );
 }
 

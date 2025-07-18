@@ -1,27 +1,34 @@
 import { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { useAppSelector } from '../../hooks/useRedux';
+import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
+import axios from 'axios';
+import { clearUser } from '../../features/user/userSlice';
+import { API_URL } from '@env';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 
-function HomeScreen() {
+function ListScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.user);
 
-  useEffect(() => {
-    if (user.id != null) {
-      navigation.replace('Main', { screen: 'ImageList' });
-    } else {
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      await dispatch(clearUser());
       navigation.replace('Auth');
     }
-  }, [user]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View>
-        <Text style={styles.text}>TileLens</Text>
+        <Text onPress={handleLogout}> Hello {user && user.username}</Text>
       </View>
     </SafeAreaView>
   );
@@ -34,10 +41,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  text: {
-    fontSize: 34,
-    fontWeight: 900,
-  },
 });
 
-export default HomeScreen;
+export default ListScreen;

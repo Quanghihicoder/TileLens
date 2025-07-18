@@ -9,7 +9,6 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 const Home = () => {
   const [username, setUsername] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const dispatch = useAppDispatch();
@@ -28,11 +27,10 @@ const Home = () => {
     e.preventDefault();
 
     if (username.length == 0) {
-      setError("Please enter a username!");
+      showNotification("Please enter a username!", "error");
       return;
     }
 
-    setError(null);
     setLoading(true);
 
     try {
@@ -77,15 +75,6 @@ const Home = () => {
             someone else's account. :D
           </p>
         </div>
-
-        {error && (
-          <div
-            className="absolute text-start text-red-600"
-            style={{ marginTop: -28 }}
-          >
-            <p>* {error}</p>
-          </div>
-        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
