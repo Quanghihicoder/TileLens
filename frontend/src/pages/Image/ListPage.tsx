@@ -1,17 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../hooks/useRedux";
 import { type RootState } from "../../app/store";
+import { type ImageData } from "../../types";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
-interface Image {
-  imageId: string;
-  imageOriginalName: string;
-  imageType: string;
-  processing: boolean;
-  isClipped: boolean;
-  isBlended: boolean;
-}
 
 const environment = import.meta.env.VITE_ENV;
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -19,7 +11,7 @@ const assetsUrl = import.meta.env.VITE_ASSETS_URL;
 
 const ImageList = () => {
   const reduxUserId = useAppSelector((state: RootState) => state.user.id);
-  const [images, setImages] = useState<Image[]>([]);
+  const [images, setImages] = useState<ImageData[]>([]);
   const [filter, setFilter] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

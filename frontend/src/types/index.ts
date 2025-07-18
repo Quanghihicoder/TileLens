@@ -30,3 +30,12 @@ export type ImageHandler = {
   left: number;
   top: number;
 };
+
+export type ImageData = {
+  imageId: string;
+  imageOriginalName: string;
+  imageType: string;
+  processing: boolean;
+  isClipped: boolean;
+  isBlended: boolean;
+}
