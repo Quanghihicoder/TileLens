@@ -7,7 +7,7 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
-  Home: undefined;
+  Splash: undefined;
   Auth: undefined;
   Main: { screen: keyof TabParamList } | undefined;
   ImageView: { imageId: string };

@@ -42,9 +42,6 @@ export const clearUser = () => async (dispatch: AppDispatch) => {
 
 export const loadUser = () => async (dispatch: AppDispatch) => {
   const savedUser = await AsyncStorage.getItem('user');
-  console.log("Load")
-
-  console.log(savedUser)
   if (savedUser) {
     try {
       const parsed = JSON.parse(savedUser) as UserState;

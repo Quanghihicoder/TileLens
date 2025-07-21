@@ -91,61 +91,67 @@ function ListScreen() {
         ))}
       </View>
 
-      {user.id != null && (
-        <FlatList
-          data={filteredImages}
-          keyExtractor={item => item.imageId}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Image
-                source={{
-                  uri: imgUrl(
-                    user.id!.toString(),
-                    item.imageId,
-                    item.imageType,
-                  ),
-                }}
-                style={styles.image}
-              />
-              <View style={styles.info}>
-                <Text style={styles.text}>
-                  <Text style={styles.label}>ID:</Text> {item.imageId}
-                </Text>
-                <Text style={styles.text}>
-                  <Text style={styles.label}>Name:</Text>{' '}
-                  {item.imageOriginalName}
-                </Text>
-                <Text style={styles.text}>
-                  <Text style={styles.label}>Type:</Text> {item.imageType}
-                </Text>
+      {filteredImages.length == 0 ? (
+        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+          <Text>No image found</Text>
+        </View>
+      ) : (
+        user.id != null && (
+          <FlatList
+            data={filteredImages}
+            keyExtractor={item => item.imageId}
+            renderItem={({ item }) => (
+              <View style={styles.card}>
+                <Image
+                  source={{
+                    uri: imgUrl(
+                      user.id!.toString(),
+                      item.imageId,
+                      item.imageType,
+                    ),
+                  }}
+                  style={styles.image}
+                />
+                <View style={styles.info}>
+                  <Text style={styles.text}>
+                    <Text style={styles.label}>ID:</Text> {item.imageId}
+                  </Text>
+                  <Text style={styles.text}>
+                    <Text style={styles.label}>Name:</Text>{' '}
+                    {item.imageOriginalName}
+                  </Text>
+                  <Text style={styles.text}>
+                    <Text style={styles.label}>Type:</Text> {item.imageType}
+                  </Text>
+                </View>
+                <View style={styles.actions}>
+                  {item.processing ? (
+                    <Text style={styles.processing}>Processing...</Text>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.button}
+                        onPress={() =>
+                          navigation.navigate('ImageView', {
+                            imageId: item.imageId,
+                          })
+                        }
+                      >
+                        <Text style={styles.buttonText}>View</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={() => Clipboard.setString(item.imageId)}
+                      >
+                        <Text style={styles.copyButtonText}>Copy</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
               </View>
-              <View style={styles.actions}>
-                {item.processing ? (
-                  <Text style={styles.processing}>Processing...</Text>
-                ) : (
-                  <>
-                    <TouchableOpacity
-                      style={styles.button}
-                      onPress={() =>
-                        navigation.navigate('ImageView', {
-                          imageId: item.imageId,
-                        })
-                      }
-                    >
-                      <Text style={styles.buttonText}>View</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.copyButton}
-                      onPress={() => Clipboard.setString(item.imageId)}
-                    >
-                      <Text style={styles.copyButtonText}>Copy</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            </View>
-          )}
-        />
+            )}
+          />
+        )
       )}
     </SafeAreaView>
   );

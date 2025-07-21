@@ -1,26 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { useAppSelector } from '../../hooks/useRedux';
-import axios from 'axios';
-import { API_URL } from '@env';
+import { useMemo, useRef, useState } from 'react';
 import {
-  ImageViewRouteProp,
-  Offset,
-  PastedImage,
-  Point,
-  RootStackParamList,
-} from '../../types';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNotification } from '../../providers/Notification';
+  SafeAreaView,
+  StyleSheet,
+  View,
+  LayoutChangeEvent,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
+} from 'react-native';
+import { useAppSelector } from '../../hooks/useRedux';
+import { ImageViewRouteProp, Offset } from '../../types';
+import { useRoute } from '@react-navigation/native';
 import { useImageMetadata } from '../../hooks/useImageMetadata';
+import { useImage } from '../../hooks/useImage';
+import { useOffset } from '../../hooks/useOffset';
+import Header from '../../components/Header';
+import { GridDisplay } from '../../components/GridDisplay';
+import { ZoomControls } from '../../components/ZoomControls';
 
 const MIN_TILE_LEVEL = 0;
 
 function ViewScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const showNotification = useNotification();
   const user = useAppSelector(state => state.user);
   const route = useRoute<ImageViewRouteProp>();
   const { imageId } = route.params;
@@ -32,49 +32,160 @@ function ViewScreen() {
 
   // State: zoom level
   const [zoom, setZoom] = useState(MIN_TILE_LEVEL);
-  const [transitionZoom, setTransitionZoom] = useState<number | null>(null);
   const prevZoomRef = useRef(zoom);
 
   // Container Ref
-  const tilesContainerRef = useRef(null);
-  const windowContainerRef = useRef(null);
+  const windowContainerDimensionsRef = useRef({
+    width: 0,
+    height: 0,
+  });
 
   // Panning state
   const draggingRef = useRef(false);
   const dragStartRef = useRef<Offset | null>(null);
   const offsetStartRef = useRef<Offset>({ x: 0, y: 0 });
 
-  // Clipping state
-  const [isClipping, setIsClipping] = useState(false);
-  const [clippingPath, setClippingPath] = useState<Point[]>([]);
-  const [isEditClipping, setIsEditClipping] = useState(false);
-  const [editPointIndex, setEditPointIndex] = useState<number | null>(null);
-  const [isGenerateCircle, setIsGenerateCircle] = useState(false);
-  const draggingPointRef = useRef(false);
-  const [isSendingClipping, setIsSendingClipping] = useState(false);
+  // Image data
+  const {
+    levelWidth,
+    levelHeight,
+    levelWidthBefore,
+    levelHeightBefore,
+    maxNumberOfTilesX,
+    maxNumberOfTilesY,
+    maxNumberOfTilesXBefore,
+    maxNumberOfTilesYBefore,
+  } = useImage(imageWidth, imageHeight, zoom, prevZoomRef);
 
-  // Blending state
-  const [isHovered, setIsHovered] = useState(false);
-  const [isSendingBlending, setIsSendingBlending] = useState(false);
-  const [pastedImages, setPastedImages] = useState<PastedImage[]>([]);
-  const mousePositionRef = useRef({ x: 0, y: 0 });
-  const [editImageIndex, setEditImageIndex] = useState<number | null>(null);
-  const [editDirectionIndex, setEditDirectionIndex] = useState<number | null>(
-    null,
+  // Check if the image at zoom level is bigger than the view port
+  const widthOverflow = useMemo(() => {
+    return levelWidth > windowContainerDimensionsRef.current.width;
+  }, [levelWidth]);
+
+  const heightOverflow = useMemo(() => {
+    return levelHeight > windowContainerDimensionsRef.current.height;
+  }, [levelHeight]);
+
+  const { offset, clampOffset, prevOffsetRef, setOffset } = useOffset(
+    levelWidth,
+    levelHeight,
+    zoom,
+    maxNumberOfTilesX,
+    maxNumberOfTilesY,
+    maxNumberOfTilesXBefore,
+    maxNumberOfTilesYBefore,
+    widthOverflow,
+    heightOverflow,
+    windowContainerDimensionsRef,
+    prevZoomRef,
   );
-  const isResizeImageRef = useRef(false);
 
-  const handleView = async () => {
-    navigation.goBack();
+  const onWindowContainerLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    windowContainerDimensionsRef.current = { width, height };
   };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+
+      // Like onMouseDown
+      onPanResponderGrant: (
+        e: GestureResponderEvent,
+        gestureState: PanResponderGestureState,
+      ) => {
+        const { locationX, locationY, pageX, pageY } = e.nativeEvent;
+        draggingRef.current = true;
+        dragStartRef.current = { x: pageX, y: pageY };
+        // This wont work, because the panResponder is useRef
+        // offsetStartRef.current = { ...offset };
+        // So, do this trick
+        // This doesn't actually change the state
+        // But you need to get the updated offset
+        setOffset(currentOffset => {
+          offsetStartRef.current = { ...currentOffset };
+          return currentOffset;
+        });
+      },
+
+      // Like onMouseMove
+      onPanResponderMove: (
+        e: GestureResponderEvent,
+        gestureState: PanResponderGestureState,
+      ) => {
+        if (!draggingRef.current || !dragStartRef.current) return;
+        const newOffsetX = offsetStartRef.current.x + gestureState.dx;
+        const newOffsetY = offsetStartRef.current.y + gestureState.dy;
+        const clamped = clampOffset(newOffsetX, newOffsetY);
+        prevOffsetRef.current = clamped;
+        setOffset(clamped);
+      },
+
+      // Like onMouseUp
+      onPanResponderRelease: (
+        e: GestureResponderEvent,
+        gestureState: PanResponderGestureState,
+      ) => {
+        draggingRef.current = false;
+        dragStartRef.current = null;
+      },
+
+      // Like onMouseLeave (finger dragged outside)
+      onPanResponderTerminate: (e, gestureState) => {
+        draggingRef.current = false;
+        dragStartRef.current = null;
+      },
+    }),
+  ).current;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View>
-        <Text onPress={handleView}> View {imageId}</Text>
-        <Text> View {maxZoomLevel}</Text>
-        <Text> View {imageWidth}</Text>
-        <Text> View {imageHeight}</Text>
+      <Header imageId={imageId} />
+
+      <View style={styles.body}>
+        <View
+          style={[
+            styles.displayArea,
+            {
+              overflow: 'hidden',
+            },
+            !widthOverflow && styles.displayAreaCenterX,
+            !heightOverflow && styles.displayAreaCenterY,
+          ]}
+          onLayout={onWindowContainerLayout}
+        >
+          <View
+            style={{
+              transform: [{ translateX: offset.x }, { translateY: offset.y }],
+            }}
+            {...panResponder.panHandlers}
+          >
+            <GridDisplay
+              userId={user.id!.toString()}
+              imageId={imageId}
+              levelWidth={levelWidth}
+              levelHeight={levelHeight}
+              zoom={zoom}
+              offset={offset}
+              containerDimensionsRef={windowContainerDimensionsRef}
+            />
+          </View>
+        </View>
+      </View>
+      <View style={styles.box}>
+        <ZoomControls
+          onZoomIn={() => {
+            if (zoom < maxZoomLevel) {
+              setTimeout(() => setZoom(zoom + 1), 100);
+            }
+          }}
+          onZoomOut={() => {
+            if (zoom > MIN_TILE_LEVEL) {
+              setTimeout(() => setZoom(zoom - 1), 100);
+            }
+          }}
+        />
       </View>
     </SafeAreaView>
   );
@@ -84,8 +195,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+
+  body: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  displayArea: {
+    width: '85%',
+    height: '90%',
+    zIndex: 10,
+    flexDirection: 'row',
+  },
+  displayAreaCenterX: { justifyContent: 'center' },
+  displayAreaCenterY: { alignItems: 'center' },
+  box: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 50,
   },
 });
 

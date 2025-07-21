@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { useAppSelector } from '../../hooks/useRedux';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types';
 
-function HomeScreen() {
+function SplashScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useAppSelector(state => state.user);
@@ -40,4 +40,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default SplashScreen;
