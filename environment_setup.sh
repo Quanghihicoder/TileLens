@@ -10,6 +10,11 @@ cd frontend
 cp .env.template .env
 cd ..
 
+# Set up mobile environment
+cd mobile
+cp .env.template .env
+cd ..
+
 # Set up worker/tiling_image environment
 cd worker/tiling_image
 cp .env.template .env

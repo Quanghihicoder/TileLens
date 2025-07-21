@@ -10,6 +10,11 @@ cd frontend
 copy .env.template .env
 cd ..
 
+REM Set up mobile environment
+cd mobile
+copy .env.template .env
+cd ..
+
 REM Set up worker/tiling_image environment
 cd worker\tiling_image
 copy .env.template .env
