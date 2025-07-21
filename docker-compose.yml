@@ -29,6 +29,7 @@ services:
       - mysql
       - mongodb
       - redis
+      - kafka-setup
     env_file:
       - ./backend/.env
 
@@ -55,6 +56,65 @@ services:
     image: redis:6
     ports:
       - "6379:6379"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.8.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    depends_on:
+      - zookeeper
+
+  kafka-setup:
+    image: confluentinc/cp-kafka:7.8.0
+    depends_on:
+      - kafka
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "
+      echo 'Waiting for Kafka to be ready...' &&
+      cub kafka-ready -b kafka:9092 1 20 &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic audio.send &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1 --topic transcription.results
+      "
+    restart: "no"
+
+  transcriber:
+    build: ./worker/transcriber
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+    restart: always
+    command: >
+      sh -c "
+        until nc -z kafka 9092; do
+          echo 'Waiting for Kafka...';
+          sleep 1;
+        done;
+        echo 'Running Python...';
+        python -u app.py
+      "
+    depends_on:
+      - kafka-setup
 
   worker-tiling-image:
     build: ./worker/tiling_image

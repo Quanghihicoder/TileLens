@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 type NotificationType = "success" | "error" | "info" | "warning";
 
 const NotificationContext = createContext<
-  (message: string, type?: NotificationType) => void
+  (message: string, type?: NotificationType, persistent?: boolean) => void
 >(() => {});
 
 export const useNotification = () => useContext(NotificationContext);
@@ -17,22 +17,27 @@ export const NotificationProvider = ({
   const [message, setMessage] = useState("");
   const [type, setType] = useState<NotificationType>("info");
   const [visible, setVisible] = useState(false);
+  const [isPersistent, setIsPersistent] = useState(false);
   const location = useLocation();
   let timeoutId: number;
 
   const showNotification = (
     text: string,
-    notificationType: NotificationType = "info"
+    notificationType: NotificationType = "info",
+    persistent: boolean = false
   ) => {
     setMessage(text);
     setType(notificationType);
     setVisible(true);
+    setIsPersistent(persistent);
     clearTimeout(timeoutId);
 
-    const wordCount = text.split(/\s+/).length;
-    const duration = Math.min((wordCount / 2) * 1000, 20000); // 2 words per second
+    if (!persistent) {
+      const wordCount = text.split(/\s+/).length;
+      const duration = Math.min((wordCount / 2) * 1000, 20000); // 2 words per second
 
-    timeoutId = setTimeout(() => setVisible(false), duration);
+      timeoutId = setTimeout(() => setVisible(false), duration);
+    }
   };
 
   useEffect(() => {

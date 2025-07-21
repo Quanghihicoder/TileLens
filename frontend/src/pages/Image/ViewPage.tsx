@@ -31,6 +31,8 @@ import { BlendingOverlay } from "../../components/BlendingOverlay";
 import { BoxDisplay } from "../../components/BoxDisplay";
 import { ThreeControls } from "../../components/ThreeDControls";
 import { useNotification } from "../../providers/Notification";
+import { useSpeech } from "../../hooks/useSpeech";
+import { SpeechControls } from "../../components/SpeechControls";
 
 const MIN_TILE_LEVEL = 0;
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -204,6 +206,68 @@ const ViewPage = () => {
     windowContainerRef,
     prevZoomRef
   );
+
+  // Speech to Text
+  const zoomIn = () => {
+    setZoom((currentZoom) => {
+      const newZoom = currentZoom + 1;
+      if (newZoom <= maxZoomLevel) {
+        setTransitionZoom(newZoom);
+        setTimeout(() => setZoom(newZoom), 100);
+        return newZoom;
+      }
+      return currentZoom;
+    });
+  };
+
+  const zoomOut = () => {
+    setZoom((currentZoom) => {
+      if (currentZoom > MIN_TILE_LEVEL) {
+        const newZoom = currentZoom - 1;
+        setTransitionZoom(newZoom);
+        setTimeout(() => setZoom(newZoom), 100);
+        return newZoom;
+      }
+      return currentZoom;
+    });
+  };
+
+  const drag = (
+    direction: "top" | "left" | "bottom" | "right",
+    amount: number
+  ) => {
+    setOffset((prev) => {
+      let newOffset = { ...prev };
+
+      switch (direction) {
+        case "top":
+          newOffset = { ...prev, y: prev.y - amount };
+          break;
+        case "left":
+          newOffset = { ...prev, x: prev.x - amount };
+          break;
+        case "bottom":
+          newOffset = { ...prev, y: prev.y + amount };
+          break;
+        case "right":
+          newOffset = { ...prev, x: prev.x + amount };
+          break;
+      }
+
+      // Apply the clamp operation before returning
+      const clamped = clampOffset(newOffset.x, newOffset.y);
+      prevOffsetRef.current = clamped;
+      return clamped;
+    });
+  };
+
+  const {
+    recordingStatus,
+    isSpeaking,
+    isLoadingSpeech,
+    handleStart,
+    handleStop,
+  } = useSpeech({ zoomIn, zoomOut, drag });
 
   const calculateMousePosition = useCallback(
     (e: React.MouseEvent) => {
@@ -724,7 +788,11 @@ const ViewPage = () => {
                   onMouseMove={onMouseMove}
                   onMouseUp={onMouseUp}
                   onMouseLeave={onMouseLeave}
-                  onPaste={isHovered && !isClipping ? handlePaste : undefined}
+                  onPaste={
+                    isHovered && !isSpeaking && !isClipping
+                      ? handlePaste
+                      : undefined
+                  }
                   onDoubleClick={onDoubleClick}
                   tabIndex={0}
                 >
@@ -760,6 +828,7 @@ const ViewPage = () => {
 
           {!isClipping &&
             pastedImages.length == 0 &&
+            !isSpeaking &&
             !widthOverflow &&
             !heightOverflow && (
               <ThreeControls
@@ -769,6 +838,15 @@ const ViewPage = () => {
                 }}
               />
             )}
+
+          {!isClipping && pastedImages.length == 0 && (
+            <SpeechControls
+              recordingStatus={recordingStatus}
+              isLoadingSpeech={isLoadingSpeech}
+              handleStart={handleStart}
+              handleStop={handleStop}
+            />
+          )}
 
           {/* Blending Buttons */}
           {pastedImages.length > 0 && (
@@ -788,7 +866,7 @@ const ViewPage = () => {
           )}
 
           {/* Clipping Buttons */}
-          {pastedImages.length == 0 && !isThreeDViewing && (
+          {pastedImages.length == 0 && !isThreeDViewing && !isSpeaking && (
             <ClippingControls
               isClipping={isClipping}
               isEditClipping={isEditClipping}
@@ -816,20 +894,7 @@ const ViewPage = () => {
           )}
 
           {/* Zoom Buttons */}
-          <ZoomControls
-            onZoomIn={() => {
-              if (zoom < maxZoomLevel) {
-                setTransitionZoom(zoom + 1);
-                setTimeout(() => setZoom(zoom + 1), 100);
-              }
-            }}
-            onZoomOut={() => {
-              if (zoom > MIN_TILE_LEVEL) {
-                setTransitionZoom(zoom - 1);
-                setTimeout(() => setZoom(zoom - 1), 100);
-              }
-            }}
-          />
+          <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} />
         </div>
       </div>
     </>
