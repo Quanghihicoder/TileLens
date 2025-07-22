@@ -241,16 +241,16 @@ const ViewPage = () => {
 
       switch (direction) {
         case "top":
-          newOffset = { ...prev, y: prev.y - amount };
-          break;
-        case "left":
-          newOffset = { ...prev, x: prev.x - amount };
-          break;
-        case "bottom":
           newOffset = { ...prev, y: prev.y + amount };
           break;
-        case "right":
+        case "left":
           newOffset = { ...prev, x: prev.x + amount };
+          break;
+        case "bottom":
+          newOffset = { ...prev, y: prev.y - amount };
+          break;
+        case "right":
+          newOffset = { ...prev, x: prev.x - amount };
           break;
       }
 
