@@ -191,7 +191,7 @@ export const useSpeech = ({ zoomIn, zoomOut, drag }: SpeechActions) => {
         "info",
         true
       );
-    } else {
+    } else if (recordingLength > 0 && recordingStatus == 1) {
       showNotification("Recording...", "info", true);
     }
   }, [recordingLength]);
