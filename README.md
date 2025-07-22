@@ -14,24 +14,19 @@ Give me a ⭐️ if you like this project.
 
 # 🚀 TL;DR - How to Run Locally - A Single Container
 
-## Pre-check 
+## Pre-check
 
 Free up these ports on your system:
-3306 (MySQL), 6379 (Redis), 27017 (MongoDB), 8000 (Backend), 5173 (Frontend)
+3306 (MySQL), 6379 (Redis), 27017 (MongoDB), 8000 (Backend), 5173 (Frontend), 2181 (Zookeeper), 9092 (Kafka)
 Make sure Docker is installed
 
-## RUN 
+## RUN
 
-1. Run the setup script
+# 🚀 TL;DR - How to Run Locally (On Mac)
 
-`./environment_setup.sh`
+1. Run the script and follow the prompts
 
-2. Start the whole stack
-
-`docker-compose up --build`
-
-- Wait for backend to finish booting (localhost:8000)
-- Open http://localhost:5173 to start uploading and zooming!
+`./run.sh`
 
 # 🚀 TL;DR - How to Run Cloud Native - AWS
 
@@ -70,7 +65,7 @@ GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
 
 # 📦 Stack Breakdown
 
-## Frontend 
+## Frontend
 
 - Lazy loading tiles
 - Smooth, accurate zooming (yes, I did the math). Use translate3d(x, y, 0) to grid-display images.
@@ -124,13 +119,13 @@ User Uploads Image -> Backend Saves Image & Pushes Job to Tiling Queue
 
 User Draw A Shape -> Call An API With (x,y) Points -> Init A Record In MongoDB -> Push To Clipping Queue
 -> Clipping Worker Picks Job From The Clipping Queue -> Clipping Worker Clips And Saves Image -> Push To Tiling Queue
--> Same As Above 
+-> Same As Above
 
 ## Blend Image
 
 User Copy An Image Id -> Paste The Image In An Image -> Call An API -> Init A Record In MongoDB -> Push To Blending Queue
 -> Blending Worker Picks Job From The Blending Queue -> Blending Worker Blends And Saves Image -> Push To Tiling Queue
--> Same As Above 
+-> Same As Above
 
 # 🧪 Useful Docker Commands
 
