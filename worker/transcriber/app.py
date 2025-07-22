@@ -14,7 +14,6 @@ model = whisper.load_model("small")  # or "base", "small", "medium", "large" bas
 # Kafka configuration
 bootstrap_servers = "kafka:9092"
 audio_send_topic = "audio.send"
-# transcription_data_topic = "transcription.data"
 transcription_results_topic = "transcription.results"
 
 consumer = KafkaConsumer(
@@ -80,13 +79,5 @@ for message in consumer:
             }).encode('utf-8')
         )
         
-        # producer.send(
-        #     transcription_data_topic,
-        #     value=json.dumps({
-        #         'sessionId': session_id,
-        #         'text': transcription,
-        #         'isFinal': False
-        #     }).encode('utf-8')
-        # )
     except Exception as e:
         print(f"Error processing message: {e}")
