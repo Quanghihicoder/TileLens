@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import NavBar from "./components/NavBar";
 import NotFoundPage from "./pages/NotFound/NotFoundPage";
+import Map from "./pages/Map/MapPage";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -45,6 +46,7 @@ const App = () => {
             <Route path="view/:imageId" element={<ImageView />} />
             <Route path="upload" element={<ImageUpload />} />
           </Route>
+            <Route path="/map" element={<Map />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

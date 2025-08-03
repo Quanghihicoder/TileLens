@@ -82,6 +82,17 @@ const NavBar = () => {
               >
                 Upload Image
               </NavLink>
+              <NavLink
+                to="/map"
+                className={({ isActive }) =>
+                  isActive
+                    ? "text-yellow-300 font-semibold border-b-2 border-yellow-300"
+                    : "hover:text-yellow-200 py-2 md:py-0"
+                }
+                onClick={() => setMenuOpen(false)}
+              >
+                Map
+              </NavLink>
             </div>
 
             {user.username && (
