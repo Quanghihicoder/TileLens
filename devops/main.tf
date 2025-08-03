@@ -129,17 +129,15 @@ module "networking" {
   source = "./modules/networking"
 
   project_name          = var.project_name
-  vpc_id                = var.vpc_id
   az_a                  = var.aza
   az_b                  = var.azb
-  public_route_table_id = var.public_route_table_id
 }
 
 module "security_groups" {
   source = "./modules/security/security_groups"
 
   project_name = var.project_name
-  vpc_id       = var.vpc_id
+  vpc_id       = module.networking.vpc_id
 }
 
 module "logs" {
@@ -182,7 +180,7 @@ module "alb" {
   source = "./modules/load_balancing/alb"
 
   project_name       = var.project_name
-  vpc_id             = var.vpc_id
+  vpc_id             = module.networking.vpc_id
   hosted_zone_id     = var.hosted_zone_id
   alb_sg_id          = module.security_groups.alb_sg_id
   public_subnet_a_id = module.networking.public_subnet_a_id
@@ -232,7 +230,7 @@ module "cdn" {
   hosted_zone_id                   = var.hosted_zone_id
   app_buckets                      = local.app_buckets
   app_bucket_regional_domain_names = module.s3.app_bucket_regional_domain_names
-  cloudfront_acm_certificate_arn   = var.acm_certificate_arn
+  cloudfront_acm_certificate_arn   = var.cloudfront_acm_certificate_arn
 }
 
 module "route53" {
