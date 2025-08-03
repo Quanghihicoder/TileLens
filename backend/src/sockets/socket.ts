@@ -1,11 +1,10 @@
 import http from "http";
 import { Server } from "socket.io";
-import { producer, audioSendTopic } from "../producers/kafka";
+import { audioSendTopic } from "../producers/kafka";
+import { Producer } from "kafkajs";
 
-let io: Server;
-
-export const initSocket = (server: http.Server) => {
-  io = new Server(server, {
+export const initSocket = (server: http.Server, producer: Producer) => {
+  const io = new Server(server, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
@@ -42,12 +41,3 @@ export const initSocket = (server: http.Server) => {
 
   return io;
 };
-
-export const getIO = () => {
-  if (!io) {
-    throw new Error("Socket.io not initialized");
-  }
-  return io;
-};
-
-

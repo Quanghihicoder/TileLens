@@ -75,6 +75,10 @@ resource "aws_ecs_task_definition" "backend_app_task" {
         {
           name  = "SQS_BLENDING_QUEUE_URL",
           value = "${var.blending_queue_url}"
+        },
+        { 
+          name = "MSK_BROKERS", 
+          value = "${var.msk_bootstrap_brokers}" 
         }
       ],
       portMappings = [{
@@ -106,3 +110,61 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8000
   }
 }
+
+# =====================================================================
+
+resource "aws_ecs_cluster" "transcriber" {
+  name = "${var.project_name}-transcriber"
+}
+
+resource "aws_ecs_task_definition" "transcriber_task" {
+  family                   = "${var.project_name}-transcriber"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = var.service_execution_role_arn
+  task_role_arn            = var.service_task_exec_role_arn
+  cpu                      = 2048  # 2 vCPU
+  memory                   = 4096  # 4GB (Fargate requires specific CPU/memory combinations)
+  
+  # Fargate requires this
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture       = "X86_64"  
+  }
+
+  container_definitions = jsonencode([{
+    name      = "${var.project_name}-transcriber"
+    image     = var.transcriber_image_url
+    essential = true
+    command   = ["python", "-u" , "app.py"]
+    
+    environment = [
+      { name = "MSK_BROKERS", value = var.msk_bootstrap_brokers }
+    ]
+    
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = var.transcriber_logs_group_name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }])
+}
+
+resource "aws_ecs_service" "transcriber" {
+  name            = "${var.project_name}-transcriber-service"
+  cluster         = aws_ecs_cluster.transcriber.id
+  task_definition = aws_ecs_task_definition.transcriber_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE" 
+
+  network_configuration {
+    subnets          = [var.private_subnet_a_id, var.private_subnet_b_id]
+    security_groups  = [var.service_sg_id]
+    assign_public_ip = false 
+  }
+}
+
+

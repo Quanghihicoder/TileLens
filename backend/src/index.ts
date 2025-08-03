@@ -13,9 +13,11 @@ import { connectDynamoDB } from "./db/dynamo";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
 import dotenv from "dotenv";
+import { Kafka } from "kafkajs";
 import { initSocket } from "./sockets/socket";
 import {
   audioSendTopic,
+  getKafkaConfig,
   connectKafka,
   transcriptionResultsTopic,
   waitForKafkaTopicReady,
@@ -210,20 +212,29 @@ app.use((req: Request, res: Response) => {
   sendError(req, res);
 });
 
-const server = http.createServer(app);
-initSocket(server);
-
 const PORT = port;
 
 (async () => {
   try {
+    const server = http.createServer(app);
+
+    const kafkaConfig = await getKafkaConfig();
+    const kafka = new Kafka(kafkaConfig);
+    
+    const admin = kafka.admin();
+    await waitForKafkaTopicReady(admin, audioSendTopic);
+    await waitForKafkaTopicReady(admin, transcriptionResultsTopic);
+
+    const producer = kafka.producer();
+    const consumer = kafka.consumer({ groupId: "speech-to-text-group" });
+    
+    const io = initSocket(server, producer);
+    await connectKafka(producer, consumer, io).catch(console.error);
+
     if (environment == "production") {
       await connectDynamoDB();
     } else {
       await connectMongo();
-      await waitForKafkaTopicReady(audioSendTopic);
-      await waitForKafkaTopicReady(transcriptionResultsTopic);
-      await connectKafka().catch(console.error);
     }
 
     server.listen(PORT, () => {

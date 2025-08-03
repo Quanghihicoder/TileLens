@@ -86,6 +86,10 @@ locals {
       name    = "blending-lambda"
       timeout = 120 # 2 minutes
     }
+    msk_topic_creator = {
+      name    = "msk_topic_creator"
+      timeout = 60 # 1 minute
+    }
   }
 
   rds_mysqldb_name = var.project_name
@@ -146,6 +150,15 @@ module "logs" {
   project_name = var.project_name
 }
 
+module "msk" {
+  source = "./modules/messaging/msk"
+
+  project_name        = var.project_name
+  private_subnet_a_id = module.networking.private_subnet_a_id
+  private_subnet_b_id = module.networking.private_subnet_b_id
+  msk_sg_id           = module.security_groups.msk_sg_id
+}
+
 module "lambda" {
   source = "./modules/compute/lambda"
 
@@ -157,12 +170,19 @@ module "lambda" {
   tiling_lambda_timeout      = local.lambdas.tiling_lambda.timeout
   clipping_lambda_timeout    = local.lambdas.clipping_lambda.timeout
   blending_lambda_timeout    = local.lambdas.blending_lambda.timeout
-  assets_bucket_name         = module.s3.assets_bucket_name
+  assets_bucket_name         = module.s3.assets_bucket
   images_dynamodb_table_name = module.dynamodb.images_dynamodb_table_name
   clipping_queue_arn         = module.sqs.clipping_queue_arn
   tiling_queue_arn           = module.sqs.tiling_queue_arn
   blending_queue_arn         = module.sqs.blending_queue_arn
   tiling_queue_url           = module.sqs.tiling_queue_url
+
+  msk_topic_creator_lambda_name = local.lambdas.msk_topic_creator.name
+  msk_topic_creator_lambda_timeout = local.lambdas.msk_topic_creator.timeout
+  lambda_msk_sg_id = module.security_groups.lambda_msk_sg_id
+  msk_bootstrap_brokers = module.msk.msk_bootstrap_brokers
+  private_subnet_a_id =  module.networking.private_subnet_a_id
+  private_subnet_b_id =  module.networking.private_subnet_b_id
 }
 
 module "rds" {
@@ -185,7 +205,7 @@ module "alb" {
   alb_sg_id          = module.security_groups.alb_sg_id
   public_subnet_a_id = module.networking.public_subnet_a_id
   public_subnet_b_id = module.networking.public_subnet_b_id
-  alb_logs_bucket    = module.s3.alb_logs_bucket_name
+  alb_logs_bucket    = module.s3.alb_logs_bucket
   backend_domain     = local.backend_domain
 }
 
@@ -198,7 +218,7 @@ module "ecs" {
   backend_sg_id                 = module.security_groups.backend_sg_id
   backend_task_exec_role_arn    = module.iam.backend_task_exec_role_arn
   backend_image_url             = var.backend_image_url
-  assets_bucket_name            = module.s3.assets_bucket_name
+  assets_bucket_name            = module.s3.assets_bucket
   images_dynamodb_table_name    = module.dynamodb.images_dynamodb_table_name
   db_username                   = var.db_username
   db_password                   = var.db_password
@@ -211,6 +231,26 @@ module "ecs" {
   backend_logs_group_name       = module.logs.backend_logs_group_name
   frontend_url                  = "https://${local.app_buckets.frontend.domain}"
   alb_target_group_arn          = module.alb.alb_target_group_arn
+  service_execution_role_arn    =  module.iam.service_execution_role_arn
+  service_sg_id = module.security_groups.service_sg_id
+  service_task_exec_role_arn = module.iam.service_task_exec_role_arn
+  msk_bootstrap_brokers = module.msk.msk_bootstrap_brokers
+
+  private_subnet_a_id = module.networking.private_subnet_a_id
+  private_subnet_b_id = module.networking.private_subnet_b_id
+
+  transcriber_image_url = var.transcriber_image_url
+  transcriber_logs_group_name = module.logs.transcriber_logs_group_name
+
+  depends_on = [module.topics]
+}
+
+module "topics" {
+  source = "./modules/messaging/topics"
+
+  msk_topic_creator_function_name = module.lambda.msk_topic_creator_function_name
+
+  depends_on = [module.msk, module.lambda]
 }
 
 module "auto_scaling" {
@@ -252,7 +292,7 @@ module "pipeline" {
   project_name         = var.project_name
   aws_region           = var.aws_region
   frontend_bucket_arn  = module.s3.frontend_bucket_arn
-  frontend_bucket_name = module.s3.frontend_bucket_name
+  frontend_bucket_name = module.s3.frontend_bucket
   tiling_lambda_name   = module.lambda.tiling_lambda_name
   clipping_lambda_name = module.lambda.clipping_lambda_name
   blending_lambda_name = module.lambda.blending_lambda_name

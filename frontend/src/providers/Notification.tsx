@@ -17,7 +17,6 @@ export const NotificationProvider = ({
   const [message, setMessage] = useState("");
   const [type, setType] = useState<NotificationType>("info");
   const [visible, setVisible] = useState(false);
-  const [isPersistent, setIsPersistent] = useState(false);
   const location = useLocation();
   let timeoutId: number;
 
@@ -29,14 +28,13 @@ export const NotificationProvider = ({
     setMessage(text);
     setType(notificationType);
     setVisible(true);
-    setIsPersistent(persistent);
     clearTimeout(timeoutId);
 
     if (!persistent) {
       const wordCount = text.split(/\s+/).length;
       const duration = Math.min((wordCount / 2) * 1000, 20000); // 2 words per second
 
-      timeoutId = setTimeout(() => setVisible(false), duration);
+      timeoutId = window.setTimeout(() => setVisible(false), duration);
     }
   };
 

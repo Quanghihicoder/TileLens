@@ -57,6 +57,11 @@ variable "backend_image_url" {
   type        = string
 }
 
+variable "transcriber_image_url" {
+  description = "Container Image URL in ECR"
+  type        = string
+}
+
 
 
 

@@ -1,46 +1,22 @@
-import { Kafka, SASLOptions } from "kafkajs";
-import { getIO } from "../sockets/socket";
+import { Admin, Consumer, Kafka, Producer } from "kafkajs";
+import { Server } from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
-const isProd = process.env.NODE_ENV === "production";
-
-// Topics
+const brokers = process.env.MSK_BROKERS?.split(",") || ["kafka:9092"];
 const audioSendTopic = "audio.send";
 const transcriptionResultsTopic = "transcription.results";
 
-const commonConfig = {
-  clientId: "tilelens",
-};
+async function getKafkaConfig() {
+  const config = {
+    brokers: brokers,
+    clientId: "tilelens",
+  };
 
-const productionConfig = {
-  brokers: (process.env.AWS_MSK_BROKERS || "").split(","),
-  ssl: true,
-  sasl: {
-    mechanism: process.env.AWS_MSK_AUTH_MECHANISM as "aws" | "plain" | "scram-sha-256" | "scram-sha-512",
-    authorizationIdentity: process.env.AWS_MSK_IAM_ARN,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    sessionToken: process.env.AWS_SESSION_TOKEN
-  } as SASLOptions
-};
+  return config;
+}
 
-const developmentConfig = {
-  brokers: ["kafka:9092"], 
-  ssl: false,
-};
-
-const kafka = new Kafka({
-  ...commonConfig,
-  ...(isProd ? productionConfig : developmentConfig)
-});
-
-// it should export producer
-const admin = kafka.admin();
-const producer = kafka.producer();
-const consumer = kafka.consumer({ groupId: "speech-to-text-group" });
-
-async function waitForKafkaTopicReady(topic: string, timeoutMs = 30000) {
+async function waitForKafkaTopicReady(admin: Admin, topic: string, timeoutMs = 30000) {
   await admin.connect();
 
   const start = Date.now();
@@ -70,7 +46,7 @@ async function waitForKafkaTopicReady(topic: string, timeoutMs = 30000) {
   throw new Error(`❌ Kafka topic "${topic}" not ready after ${timeoutMs}ms`);
 }
 
-async function connectKafka() {
+async function connectKafka(producer: Producer, consumer: Consumer, io: Server) {
   await producer.connect();
   await consumer.connect();
 
@@ -88,7 +64,6 @@ async function connectKafka() {
 
       if (topic === transcriptionResultsTopic) {
         try {
-          const io = getIO();
           io.to(result.sessionId).emit("transcription:received", {
             text: result.text,
             isFinal: result.isFinal,
@@ -105,9 +80,9 @@ async function connectKafka() {
 }
 
 export {
-  producer,
   audioSendTopic,
   transcriptionResultsTopic,
+  getKafkaConfig,
   connectKafka,
   waitForKafkaTopicReady,
 };
