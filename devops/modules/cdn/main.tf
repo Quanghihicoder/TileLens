@@ -5,7 +5,7 @@ data "aws_route53_zone" "main" {
 resource "aws_cloudfront_origin_access_control" "oac" {
   for_each = var.app_buckets
 
-  name                              = each.value.oac_name
+  name                              = "${var.project_name}-${each.value.oac_name}"
   description                       = each.value.oac_description
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -13,7 +13,7 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 }
 
 resource "aws_cloudfront_origin_request_policy" "cors_policy" {
-  name = "Allow-CORS-Headers"
+  name = "${var.project_name}-allow-CORS-headers"
 
   headers_config {
     header_behavior = "whitelist"
@@ -36,7 +36,7 @@ resource "aws_cloudfront_origin_request_policy" "cors_policy" {
 }
 
 resource "aws_cloudfront_response_headers_policy" "cors_response" {
-  name = "Allow-CORS-Response-Headers"
+  name = "${var.project_name}-allow-CORS-response-headers"
 
   cors_config {
     access_control_allow_credentials = false
@@ -54,7 +54,7 @@ resource "aws_cloudfront_response_headers_policy" "cors_response" {
 }
 
 resource "aws_cloudfront_cache_policy" "cache_policy" {
-  name = "MyCustomCachePolicy"
+  name = "${var.project_name}-custom-cache-policy"
 
   default_ttl = 3600
   max_ttl     = 86400
@@ -83,7 +83,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   origin {
     domain_name              = var.app_bucket_regional_domain_names[each.key]
-    origin_id                = each.value.origin_id
+    origin_id                = "${var.project_name}${each.value.origin_id}"
     origin_access_control_id = aws_cloudfront_origin_access_control.oac[each.key].id
   }
 
@@ -95,7 +95,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = each.value.origin_id
+    target_origin_id       = "${var.project_name}${each.value.origin_id}"
     viewer_protocol_policy = "redirect-to-https"
 
     cache_policy_id            = aws_cloudfront_cache_policy.cache_policy.id

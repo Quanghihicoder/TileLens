@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "hosted_zone_id" {
   description = "ID of the domain hosted zone"
   type        = string

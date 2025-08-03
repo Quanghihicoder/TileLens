@@ -25,28 +25,29 @@ provider "aws" {
 ######################
 
 locals {
-  app_name = "tilelens"
+  app_name = var.project_name
 
-  backend_domain = "api.tilelens.quangtechnologies.com"
+  backend_domain = "api.${var.project_name}.quangtechnologies.com"
+
   app_buckets = {
     frontend = {
-      name            = "tilelens-frontend"
-      domain          = "tilelens.quangtechnologies.com"
-      origin_id       = "tilelensfrontendS3Origin"
-      oac_name        = "tilelens-frontend-oac"
+      name            = "frontend"
+      domain          = "${var.project_name}.quangtechnologies.com"
+      origin_id       = "frontendS3Origin"
+      oac_name        = "frontend-oac"
       oac_description = "OAC for TileLens Frontend"
     }
     assets = {
-      name            = "tilelens-assets"
-      domain          = "assets.tilelens.quangtechnologies.com"
-      origin_id       = "tilelensassetsS3Origin"
-      oac_name        = "tilelens-assets-oac"
+      name            = "assets"
+      domain          = "assets.${var.project_name}.quangtechnologies.com"
+      origin_id       = "assetsS3Origin"
+      oac_name        = "assets-oac"
       oac_description = "OAC for TileLens Assets"
     }
   }
   logs_buckets = {
     alb = {
-      name = "tilelens-alb-logs"
+      name = "alb-logs"
     }
   }
 
@@ -87,13 +88,14 @@ locals {
     }
   }
 
-  rds_mysqldb_name = "tilelens"
+  rds_mysqldb_name = var.project_name
 
 }
 
 module "s3" {
   source = "./modules/storage/s3"
 
+  project_name = var.project_name
   app_buckets  = local.app_buckets
   logs_buckets = local.logs_buckets
   region_id    = var.region_id
@@ -101,17 +103,21 @@ module "s3" {
 
 module "dynamodb" {
   source = "./modules/storage/dynamodb"
-  tables = local.dynamodb_tables
+
+  project_name = var.project_name
+  tables       = local.dynamodb_tables
 }
 
 module "sqs" {
-  source = "./modules/messaging/sqs"
-  queues = local.sqs_queues
+  source       = "./modules/messaging/sqs"
+  project_name = var.project_name
+  queues       = local.sqs_queues
 }
 
 module "iam" {
   source = "./modules/security/iam"
 
+  project_name              = var.project_name
   clipping_queue_arn        = module.sqs.clipping_queue_arn
   tiling_queue_arn          = module.sqs.tiling_queue_arn
   blending_queue_arn        = module.sqs.blending_queue_arn
@@ -122,6 +128,7 @@ module "iam" {
 module "networking" {
   source = "./modules/networking"
 
+  project_name          = var.project_name
   vpc_id                = var.vpc_id
   az_a                  = var.aza
   az_b                  = var.azb
@@ -131,16 +138,20 @@ module "networking" {
 module "security_groups" {
   source = "./modules/security/security_groups"
 
-  vpc_id = var.vpc_id
+  project_name = var.project_name
+  vpc_id       = var.vpc_id
 }
 
 module "logs" {
   source = "./modules/logs"
+
+  project_name = var.project_name
 }
 
 module "lambda" {
   source = "./modules/compute/lambda"
 
+  project_name               = var.project_name
   lambda_exec_role_arn       = module.iam.lambda_exec_role_arn
   tiling_lambda_name         = local.lambdas.tiling_lambda.name
   clipping_lambda_name       = local.lambdas.clipping_lambda.name
@@ -148,8 +159,8 @@ module "lambda" {
   tiling_lambda_timeout      = local.lambdas.tiling_lambda.timeout
   clipping_lambda_timeout    = local.lambdas.clipping_lambda.timeout
   blending_lambda_timeout    = local.lambdas.blending_lambda.timeout
-  assets_bucket_name         = local.app_buckets.assets.name
-  images_dynamodb_table_name = local.dynamodb_tables.images.name
+  assets_bucket_name         = module.s3.assets_bucket_name
+  images_dynamodb_table_name = module.dynamodb.images_dynamodb_table_name
   clipping_queue_arn         = module.sqs.clipping_queue_arn
   tiling_queue_arn           = module.sqs.tiling_queue_arn
   blending_queue_arn         = module.sqs.blending_queue_arn
@@ -159,6 +170,7 @@ module "lambda" {
 module "rds" {
   source = "./modules/compute/rds"
 
+  project_name          = var.project_name
   db_username           = var.db_username
   db_password           = var.db_password
   mysqldb_name          = local.rds_mysqldb_name
@@ -169,43 +181,46 @@ module "rds" {
 module "alb" {
   source = "./modules/load_balancing/alb"
 
+  project_name       = var.project_name
   vpc_id             = var.vpc_id
   hosted_zone_id     = var.hosted_zone_id
   alb_sg_id          = module.security_groups.alb_sg_id
   public_subnet_a_id = module.networking.public_subnet_a_id
   public_subnet_b_id = module.networking.public_subnet_b_id
-  alb_logs_bucket    = local.logs_buckets.alb.name
+  alb_logs_bucket    = module.s3.alb_logs_bucket_name
   backend_domain     = local.backend_domain
 }
 
 module "ecs" {
   source = "./modules/compute/ecs"
 
-  public_subnet_a_id         = module.networking.public_subnet_a_id
-  iam_instance_profile_name  = module.iam.iam_instance_profile_name
-  ecs_sg_id                  = module.security_groups.ecs_sg_id
-  ecs_task_exec_role_arn     = module.iam.ecs_task_exec_role_arn
-  ecs_image_url              = var.ecs_image_url
-  assets_bucket_name         = local.app_buckets.assets.name
-  images_dynamodb_table_name = local.dynamodb_tables.images.name
-  db_username                = var.db_username
-  db_password                = var.db_password
-  mysqldb_name               = local.rds_mysqldb_name
-  mysqldb_address            = module.rds.mysqldb_address
-  aws_region                 = var.aws_region
-  clipping_queue_url         = module.sqs.clipping_queue_url
-  tiling_queue_url           = module.sqs.tiling_queue_url
-  blending_queue_url         = module.sqs.blending_queue_url
-  ecs_logs_group_name        = module.logs.ecs_logs_group_name
-  frontend_url               = "https://${local.app_buckets.frontend.domain}"
-  alb_target_group_arn       = module.alb.alb_target_group_arn
+  project_name                  = var.project_name
+  public_subnet_a_id            = module.networking.public_subnet_a_id
+  backend_instance_profile_name = module.iam.backend_instance_profile_name
+  backend_sg_id                 = module.security_groups.backend_sg_id
+  backend_task_exec_role_arn    = module.iam.backend_task_exec_role_arn
+  backend_image_url             = var.backend_image_url
+  assets_bucket_name            = module.s3.assets_bucket_name
+  images_dynamodb_table_name    = module.dynamodb.images_dynamodb_table_name
+  db_username                   = var.db_username
+  db_password                   = var.db_password
+  mysqldb_name                  = local.rds_mysqldb_name
+  mysqldb_address               = module.rds.mysqldb_address
+  aws_region                    = var.aws_region
+  clipping_queue_url            = module.sqs.clipping_queue_url
+  tiling_queue_url              = module.sqs.tiling_queue_url
+  blending_queue_url            = module.sqs.blending_queue_url
+  backend_logs_group_name       = module.logs.backend_logs_group_name
+  frontend_url                  = "https://${local.app_buckets.frontend.domain}"
+  alb_target_group_arn          = module.alb.alb_target_group_arn
 }
 
 module "auto_scaling" {
   source = "./modules/auto_scaling"
 
-  ecs_cluster_name = module.ecs.ecs_cluster_name
-  ecs_service_name = module.ecs.ecs_service_name
+  project_name             = var.project_name
+  backend_ecs_cluster_name = module.ecs.backend_ecs_cluster_name
+  backend_ecs_service_name = module.ecs.backend_ecs_service_name
 
   depends_on = [module.ecs]
 }
@@ -213,6 +228,7 @@ module "auto_scaling" {
 module "cdn" {
   source = "./modules/cdn"
 
+  project_name                     = var.project_name
   hosted_zone_id                   = var.hosted_zone_id
   app_buckets                      = local.app_buckets
   app_bucket_regional_domain_names = module.s3.app_bucket_regional_domain_names
@@ -235,12 +251,13 @@ module "route53" {
 module "pipeline" {
   source = "./modules/pipeline"
 
+  project_name         = var.project_name
   aws_region           = var.aws_region
   frontend_bucket_arn  = module.s3.frontend_bucket_arn
-  frontend_bucket_name = local.app_buckets.frontend.name
-  tiling_lambda_name   = local.lambdas.tiling_lambda.name
-  clipping_lambda_name = local.lambdas.clipping_lambda.name
-  blending_lambda_name = local.lambdas.blending_lambda.name
-  ecs_cluster_name     = module.ecs.ecs_cluster_name
-  ecs_service_name     = module.ecs.ecs_service_name
+  frontend_bucket_name = module.s3.frontend_bucket_name
+  tiling_lambda_name   = module.lambda.tiling_lambda_name
+  clipping_lambda_name = module.lambda.clipping_lambda_name
+  blending_lambda_name = module.lambda.blending_lambda_name
+  backend_ecs_cluster_name     = module.ecs.backend_ecs_cluster_name
+  backend_ecs_service_name     = module.ecs.backend_ecs_service_name
 }

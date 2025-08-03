@@ -5,7 +5,7 @@ resource "aws_subnet" "public_a" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "tilelens-public-subnet"
+    Name = "${var.project_name}-public-subnet-a"
   }
 }
 
@@ -16,7 +16,7 @@ resource "aws_subnet" "public_b" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "tilelens-public-subnet"
+    Name = "${var.project_name}-public-subnet-b"
   }
 }
 
@@ -26,7 +26,7 @@ resource "aws_subnet" "private_a" {
   availability_zone = var.az_a
 
   tags = {
-    Name = "tilelens-private-subnet"
+    Name = "${var.project_name}-private-subnet-a"
   }
 }
 
@@ -36,7 +36,7 @@ resource "aws_subnet" "private_b" {
   availability_zone = var.az_b
 
   tags = {
-    Name = "tilelens-private-subnet"
+    Name = "${var.project_name}-private-subnet-b"
   }
 }
 
@@ -52,6 +52,6 @@ resource "aws_route_table_association" "public_assoc_b" {
 
 # Subnet group for RDS 
 resource "aws_db_subnet_group" "rds_subnet_group" {
-  name       = "tilelens-rds-subnet-group"
+  name       = "${var.project_name}-rds-subnet-group"
   subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 }

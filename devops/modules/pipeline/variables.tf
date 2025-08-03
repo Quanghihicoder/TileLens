@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "aws_region" {
   description = "AWS region"
   type        = string
@@ -33,10 +38,10 @@ variable "blending_lambda_name" {
   type = string
 }
 
-variable "ecs_cluster_name" {
+variable "backend_ecs_cluster_name" {
   type = string
 }
 
-variable "ecs_service_name" {
+variable "backend_ecs_service_name" {
   type = string
 }

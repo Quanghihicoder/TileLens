@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "clipping_queue_arn" {
   description = "The ARN of the clipping image queue"
   type        = string

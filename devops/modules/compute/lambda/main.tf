@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "tiling_lambda" {
-  function_name    = var.tiling_lambda_name
+  function_name    = "${var.project_name}-${var.tiling_lambda_name}"
   handler          = "handler.handler"
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn
@@ -20,14 +20,14 @@ resource "aws_lambda_function" "tiling_lambda" {
 }
 
 resource "aws_lambda_event_source_mapping" "tiling_lambda_trigger" {
-  event_source_arn = var.tiling_queue_arn
+  event_source_arn = var.tiling_queue_arn 
   function_name    = aws_lambda_function.tiling_lambda.arn
   batch_size       = 10
   enabled          = true
 }
 
 resource "aws_lambda_function" "clipping_lambda" {
-  function_name    = var.clipping_lambda_name
+  function_name    = "${var.project_name}-${var.clipping_lambda_name}"
   handler          = "handler.handler"
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn
@@ -57,7 +57,7 @@ resource "aws_lambda_event_source_mapping" "clipping_lambda_trigger" {
 
 
 resource "aws_lambda_function" "blending_lambda" {
-  function_name    = var.blending_lambda_name
+  function_name    = "${var.project_name}-${var.blending_lambda_name}"
   handler          = "handler.handler"
   runtime          = "nodejs20.x"
   role             = var.lambda_exec_role_arn

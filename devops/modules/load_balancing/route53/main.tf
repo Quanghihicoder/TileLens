@@ -12,7 +12,7 @@ resource "aws_route53_record" "dns" {
   }
 }
 
-resource "aws_route53_record" "api_tilelens" {
+resource "aws_route53_record" "api" {
   zone_id = var.hosted_zone_id
   name    = var.backend_domain
   type    = "A"

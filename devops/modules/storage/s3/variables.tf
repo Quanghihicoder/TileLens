@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "app_buckets" {
   description = "Map of S3 App bucket configurations"
   type = map(object({

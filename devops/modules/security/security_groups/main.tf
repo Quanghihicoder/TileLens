@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb_sg" {
-  name        = "tilelens-alb-sg"
+  name        = "${var.project_name}-alb-sg"
   description = "Allow inbound traffic"
   vpc_id      = var.vpc_id
 
@@ -28,8 +28,8 @@ resource "aws_security_group" "alb_sg" {
 }
 
 
-resource "aws_security_group" "ecs_sg" {
-  name        = "tilelens-ecs-ec2-sg"
+resource "aws_security_group" "backend_sg" {
+  name        = "${var.project_name}-backend-sg"
   description = "SG for ECS EC2"
   vpc_id      = var.vpc_id
 
@@ -65,13 +65,13 @@ resource "aws_security_group" "ecs_sg" {
   }
 
   tags = {
-    Name = "tilelens-ecs-ec2-sg"
+    Name = "${var.project_name}-backend-sg"
   }
 }
 
 resource "aws_security_group" "rds_sg" {
-  name        = "tilelens-rds-sg"
-  description = "Allow MySQL access from Tilelens ECS"
+  name        = "${var.project_name}-rds-sg"
+  description = "Allow MySQL access from ${var.project_name} ECS"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -89,7 +89,7 @@ resource "aws_security_group" "rds_sg" {
   }
 
   tags = {
-    Name = "tilelens-rds-sg"
+    Name = "${var.project_name}-rds-sg"
   }
 }
 

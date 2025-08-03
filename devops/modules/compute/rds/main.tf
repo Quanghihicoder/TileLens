@@ -1,5 +1,5 @@
-resource "aws_db_instance" "tilelens_mysql" {
-  identifier             = "tilelens-mysqldb"
+resource "aws_db_instance" "mysql" {
+  identifier             = "${var.project_name}-mysqldb"
   db_name                = var.mysqldb_name
   engine                 = "mysql"
   engine_version         = "8.0"
@@ -14,6 +14,6 @@ resource "aws_db_instance" "tilelens_mysql" {
   publicly_accessible = false
 
   tags = {
-    Name = "tilelens-mysqldb"
+    Name = "${var.project_name}-mysqldb"
   }
 }

@@ -1,6 +1,6 @@
 # ========== Share Resources ==========
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket        = "tilelens-codepipeline-artifacts"
+  bucket        = "${var.project_name}-codepipeline-artifacts"
   force_destroy = true
 }
 
@@ -19,7 +19,7 @@ data "aws_secretsmanager_secret_version" "github_token" {
 
 # ========== IAM Roles ==========
 resource "aws_iam_role" "codebuild_role" {
-  name = "tilelens-codebuild-role"
+  name = "${var.project_name}-codebuild-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -36,7 +36,7 @@ resource "aws_iam_role" "codebuild_role" {
 }
 
 resource "aws_iam_policy" "codebuild_policy" {
-  name = "tilelens-codebuild-policy"
+  name = "${var.project_name}-codebuild-policy"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -88,7 +88,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_attach_policy" {
 }
 
 resource "aws_iam_role" "codedeploy_role" {
-  name = "tilelens-codedeploy-role"
+  name = "${var.project_name}-codedeploy-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -105,7 +105,7 @@ resource "aws_iam_role" "codedeploy_role" {
 }
 
 resource "aws_iam_role" "codepipeline_role" {
-  name = "tilelens-codepipeline-role"
+  name = "${var.project_name}-codepipeline-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -122,7 +122,7 @@ resource "aws_iam_role" "codepipeline_role" {
 }
 
 resource "aws_iam_policy" "codepipeline_policy" {
-  name = "tilelens-codepipeline_policy"
+  name = "${var.project_name}-codepipeline_policy"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -273,12 +273,12 @@ resource "aws_codebuild_project" "ecs_build" {
 
     environment_variable {
       name  = "IMAGE_REPO_NAME"
-      value = "tilelens"
+      value = "${var.project_name}"
     }
 
     environment_variable {
       name  = "CONTAINER_NAME"
-      value = "tilelens"
+      value = "${var.project_name}"
     }
   }
 
@@ -312,8 +312,8 @@ resource "aws_codebuild_project" "frontend_build" {
 }
 
 # Pipeline
-resource "aws_codepipeline" "tilelens_pipeline" {
-  name     = "tilelens-pipeline"
+resource "aws_codepipeline" "pipeline" {
+  name     = "${var.project_name}-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
 
   artifact_store {
@@ -494,8 +494,8 @@ resource "aws_codepipeline" "tilelens_pipeline" {
       input_artifacts = ["backend_build_output"]
 
       configuration = {
-        ClusterName = var.ecs_cluster_name
-        ServiceName = var.ecs_service_name
+        ClusterName = var.backend_ecs_cluster_name
+        ServiceName = var.backend_ecs_service_name
         FileName    = "imagedefinitions.json"
       }
     }

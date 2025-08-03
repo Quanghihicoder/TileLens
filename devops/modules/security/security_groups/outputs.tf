@@ -1,5 +1,5 @@
 output "ecs_sg_id" {
-  value = aws_security_group.ecs_sg.id
+  value = aws_security_group.backend_sg.id
 }
 
 output "rds_sg_id" {

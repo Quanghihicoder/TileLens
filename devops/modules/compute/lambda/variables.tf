@@ -1,3 +1,8 @@
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
 variable "lambda_exec_role_arn" {
   description = "ARN of lambda execution role"
   type        = string

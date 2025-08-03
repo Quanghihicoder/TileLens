@@ -1,5 +1,5 @@
 output "alb_target_group_arn" {
-  value = aws_lb_target_group.tilelens_tg.arn
+  value = aws_lb_target_group.tg.arn
 }
 
 output "alb_dns_name" {

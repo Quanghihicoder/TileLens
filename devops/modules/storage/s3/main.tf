@@ -1,12 +1,12 @@
 resource "aws_s3_bucket" "app_buckets" {
   for_each      = var.app_buckets
-  bucket        = each.value.name
+  bucket        = "${var.project_name}-${each.value.name}"
   force_destroy = true
 }
 
 resource "aws_s3_bucket" "logs_buckets" {
   for_each      = var.logs_buckets
-  bucket        = each.value.name
+  bucket        = "${var.project_name}-${each.value.name}"
   force_destroy = true
 }
 

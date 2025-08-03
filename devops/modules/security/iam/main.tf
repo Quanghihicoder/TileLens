@@ -1,7 +1,7 @@
 # Lambda exec role
 
 resource "aws_iam_role" "lambda_exec" {
-  name = "lambda-sqs-role"
+  name = "${var.project_name}-lambda-sqs-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -16,7 +16,7 @@ resource "aws_iam_role" "lambda_exec" {
 }
 
 resource "aws_iam_policy" "lambda_exec_permissions" {
-  name = "lambda-exec-permissions"
+  name = "${var.project_name}-lambda-exec-permissions"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -67,7 +67,7 @@ resource "aws_iam_policy" "lambda_exec_permissions" {
 }
 
 resource "aws_iam_policy_attachment" "lambda_policy" {
-  name       = "lambda-sqs-policy-attachment"
+  name       = "${var.project_name}-lambda-sqs-policy-attachment"
   roles      = [aws_iam_role.lambda_exec.name]
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
@@ -80,8 +80,8 @@ resource "aws_iam_role_policy_attachment" "lambda_attach_policy" {
 
 # ECS EC2 instance role
 
-resource "aws_iam_role" "tilelens_ecs_instance_role" {
-  name = "tilelens-ecs-instance-role"
+resource "aws_iam_role" "backend_instance_role" {
+  name = "${var.project_name}-backend-instance-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -95,25 +95,25 @@ resource "aws_iam_role" "tilelens_ecs_instance_role" {
   })
 }
 
-resource "aws_iam_instance_profile" "tilelens_ecs_instance_profile" {
-  name = "tilelens-instance-profile"
-  role = aws_iam_role.tilelens_ecs_instance_role.name
+resource "aws_iam_instance_profile" "backend_instance_profile" {
+  name = "${var.project_name}-backend-instance-profile"
+  role = aws_iam_role.backend_instance_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "tilelens_ecs_instance_role_policy" {
+resource "aws_iam_role_policy_attachment" "backend_instance_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-  role       = aws_iam_role.tilelens_ecs_instance_role.name
+  role       = aws_iam_role.backend_instance_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_instance_cloudwatch_policy" {
-  role       = aws_iam_role.tilelens_ecs_instance_role.name
+resource "aws_iam_role_policy_attachment" "backend_instance_cloudwatch_policy" {
+  role       = aws_iam_role.backend_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 # ECS task exec role
 
-resource "aws_iam_role" "tilelens_ecs_task_exec_role" {
-  name = "tilelens-ecs-task-exec-role"
+resource "aws_iam_role" "backend_task_exec_role" {
+  name = "${var.project_name}-backend-task-exec-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -127,8 +127,8 @@ resource "aws_iam_role" "tilelens_ecs_task_exec_role" {
   })
 }
 
-resource "aws_iam_policy" "tilelens_ecs_permissions" {
-  name = "tilelens-ecs-task-policy"
+resource "aws_iam_policy" "backend_task_permissions" {
+  name = "${var.project_name}-backend-task-policy"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -165,7 +165,7 @@ resource "aws_iam_policy" "tilelens_ecs_permissions" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_attach_policy" {
-  role       = aws_iam_role.tilelens_ecs_task_exec_role.name
-  policy_arn = aws_iam_policy.tilelens_ecs_permissions.arn
+resource "aws_iam_role_policy_attachment" "backend_task_attach_policy" {
+  role       = aws_iam_role.backend_task_exec_role.name
+  policy_arn = aws_iam_policy.backend_task_permissions.arn
 }
