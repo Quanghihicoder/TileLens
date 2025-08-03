@@ -30,6 +30,8 @@ Make sure Docker is installed
 
 # 🚀 TL;DR - How to Run Cloud Native - AWS
 
+On Window please run with Administrator
+
 1. Add frontend .env.production
 
 ```

@@ -33,3 +33,6 @@ terraform init
 terraform apply -auto-approve
 
 aws s3 sync ..\frontend\dist s3://tilelens-frontend --delete
+
+@REM aws cloudfront create-invalidation --distribution-id <your-id> --paths "/*" --no-cli-pager
+@REM aws lambda update-function-code --function-name <your-lambda-name> --zip-file fileb://path/to/your/deployment-package.zip --no-cli-pager
