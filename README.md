@@ -9,8 +9,8 @@ Give me a ⭐️ if you like this project.
 # 🌐 Live Demo
 
 - App (available Mon-Fri, 9AM - 5PM AEST): https://tilelens.quangtechnologies.com
-- Feature Demo: https://www.youtube.com/watch?v=YjK48oZDZO8
-- Setup & Run Walkthrough: https://youtu.be/aLDVqkwxHoc
+- YouTube Demo Web: https://www.youtube.com/watch?v=XTw7MDPwpAI
+- YouTube Demo Mobile: https://www.youtube.com/watch?v=iKnnbLJBktw
 
 # 🚀 TL;DR - How to Run Locally - A Single Container
 
@@ -18,19 +18,37 @@ Give me a ⭐️ if you like this project.
 
 Free up these ports on your system:
 3306 (MySQL), 6379 (Redis), 27017 (MongoDB), 8000 (Backend), 5173 (Frontend), 2181 (Zookeeper), 9092 (Kafka)
+
 Make sure Docker is installed
 
 ## RUN
 
-# 🚀 TL;DR - How to Run Locally (On Mac)
+# 🚀 How to Run Locally (On Mac)
 
 1. Run the script and follow the prompts
 
 `./run.sh`
 
-# 🚀 TL;DR - How to Run Cloud Native - AWS
+# 🚀 How to Run Locally (On Windows)
 
-On Window please run with Administrator
+1. Run the script
+
+`docker-compose up --build`
+
+2. If you want to run the mobile version (you must run the first command before this)
+
+On a new terminal
+
+```
+cd mobile
+npm i
+npm run android
+```
+
+# 🚀 How to Deploy - AWS
+
+> ⚠️ **IMPORTANT:** On **Windows**, please run the command **as Administrator**.
+> ⚠️ **IMPORTANT:** You may need to manually change globally unique service names like S3.
 
 1. Add frontend .env.production
 
@@ -38,16 +56,27 @@ On Window please run with Administrator
 VITE_ENV=production
 VITE_API_URL=https://api.tilelens.quangtechnologies.com/api
 VITE_ASSETS_URL=https://assets.tilelens.quangtechnologies.com/assets
+VITE_SOCKET_URL=https://api.tilelens.quangtechnologies.com
 ```
 
 2. Add required terraform variables in devops/terraform.tfvars
 
 3. Deploy the infrastructure
 
+On Mac\Linux
+
 ```
 cd devops
 ./init.sh
 ./deploy.sh
+```
+
+On Windows
+
+```
+cd devops
+init.bat
+deploy.bat
 ```
 
 4. To cleanup the infrastructure
@@ -57,11 +86,18 @@ cd devops
 ./cleanup.sh
 ```
 
+OR
+
+```
+cd devops
+cleanup.bat
+```
+
 # Keywords
 
-ReactJS, Redux, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Docker, Terraform, AWS, JWT token, queue FIFO processing
+ReactJS, React Native, TailwindCSS, NodeJS, MongoDB, MySQL, Prisma, Redis, BullMQ, Socket.io,Kafka, Docker, Terraform, AWS
 
-AWS Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), RDS (MySQL), DynamoDB
+Route53, Lambda, SQS, S3 + CloudFront, ALB, ECS (EC2), ECS (Fargate),  RDS (MySQL), DynamoDB, MSK
 
 GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
 
@@ -75,6 +111,9 @@ GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
 - Handles image uploads, token auth, and renders only what’s needed
 - Allow users to clip images by drawing shapes. All math, no library.
 - Allow users to copy and paste images in an image.
+- 3D box view with ThreeJS.
+- Map locations with CesiumJS/ResiumJS.
+- Mobile version with React Native
 
 ## Backend
 
@@ -84,14 +123,16 @@ GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
 - Pushes image jobs to BullMQ (Redis) or SQS for async tiling
 - Uses MongoDB or DynamoDB to track processing status + metadata
 - MySQL or RDS MySQL is just for user accounts
+- Socket.io + Kafka allow streaming speak to control
 
-## Worker (Node.js Standalone or Lambda)
+## Worker (Node.js/Python Standalone or Lambda)
 
 - Pulls image jobs from Redis or SQS queue
 - Does the image tiling, clipping and blending
 - Saves tiles to /assets/tiles/{userId}/{imageId}/ or S3
 - Shared volume between backend and worker = instant availability
 - Updates Mongo or DynamoDB with final width/height and marks as processing: false
+- OpenAI Whisper base model for transcribe job
 
 ## Cloud Native AWS
 
@@ -102,6 +143,8 @@ GitHub Actions, CodePipeline, CodeBuild, CodeDeploy
 - Backend -> ALB + ECS (EC2)
 - MySQL -> Amazon RDS (MySQL)
 - MongoDB -> Amazon DynamoDB
+- Kafka -> MSK
+- OpenAI Whisper model -> ECS (Fargate) 
 
 ![Infras](https://github.com/Quanghihicoder/TileLens/blob/master/sample_images/infras.png)
 
