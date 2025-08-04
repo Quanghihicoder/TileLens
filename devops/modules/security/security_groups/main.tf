@@ -3,15 +3,6 @@ resource "aws_security_group" "alb_sg" {
   description = "Allow inbound traffic"
   vpc_id      = var.vpc_id
 
-  # ingress {
-  #   from_port   = 443
-  #   to_port     = 443
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
-
-  # I don't know why, but it only works when all traffic is allowed.
-  # Edit the ECS security group instead.
   ingress {
     from_port   = 0
     to_port     = 0
@@ -33,39 +24,32 @@ resource "aws_security_group" "backend_sg" {
   description = "SG for ECS EC2"
   vpc_id      = var.vpc_id
 
-  # ingress {
-  #   from_port       = 80
-  #   to_port         = 80
-  #   protocol        = "tcp"
-  #   security_groups = [aws_security_group.alb_sg.id]
-  # }
-
-  # ingress {
-  #   from_port       = 443
-  #   to_port         = 443
-  #   protocol        = "tcp"
-  #   security_groups = [aws_security_group.alb_sg.id]
-  # }
-
-  # ingress {
-  #   from_port       = 8000
-  #   to_port         = 8000
-  #   protocol        = "tcp"
-  #   security_groups = [aws_security_group.alb_sg.id]
-  # }
-
-  # egress {
-  #   from_port   = 0
-  #   to_port     = 0
-  #   protocol    = "-1"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  ingress {
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  ingress {
+    from_port       = 9092
+    to_port         = 9092
+    protocol        = "tcp"
+    security_groups = [aws_security_group.msk_sg.id]
   }
 
   egress {
@@ -86,10 +70,10 @@ resource "aws_security_group" "service_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 9092
+    to_port         = 9092
+    protocol        = "tcp"
+    security_groups = [aws_security_group.msk_sg.id]
   }
 
   egress {
@@ -106,9 +90,9 @@ resource "aws_security_group" "msk_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 9092
+    to_port     = 9092
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -126,10 +110,10 @@ resource "aws_security_group" "lambda_msk_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 9092
+    to_port         = 9092
+    protocol        = "tcp"
+    security_groups = [aws_security_group.msk_sg.id]
   }
 
   egress {
