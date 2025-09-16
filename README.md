@@ -8,7 +8,7 @@ Give me a ⭐️ if you like this project.
 
 # 🌐 Live Demo
 
-- App (available Mon-Fri, 9AM - 5PM AEST): https://tilelens.quangtechnologies.com
+- App (email me so I can run the GitHub workflow to deploy it or it will be available 15 minutes before an interview): https://tilelens.quangtechnologies.com
 - YouTube Demo Web: https://www.youtube.com/watch?v=XTw7MDPwpAI
 - YouTube Demo Mobile: https://www.youtube.com/watch?v=iKnnbLJBktw
 
