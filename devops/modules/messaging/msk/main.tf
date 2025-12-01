@@ -1,6 +1,6 @@
 resource "aws_msk_cluster" "cluster" {
   cluster_name           = "${var.project_name}-msk-cluster"
-  kafka_version          = "2.8.1"
+  kafka_version          = "3.8.x"
   number_of_broker_nodes = 2
 
   broker_node_group_info {

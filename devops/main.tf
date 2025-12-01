@@ -286,16 +286,16 @@ module "route53" {
   depends_on = [module.cdn, module.alb]
 }
 
-module "pipeline" {
-  source = "./modules/pipeline"
+# module "pipeline" {
+#   source = "./modules/pipeline"
 
-  project_name         = var.project_name
-  aws_region           = var.aws_region
-  frontend_bucket_arn  = module.s3.frontend_bucket_arn
-  frontend_bucket_name = module.s3.frontend_bucket
-  tiling_lambda_name   = module.lambda.tiling_lambda_name
-  clipping_lambda_name = module.lambda.clipping_lambda_name
-  blending_lambda_name = module.lambda.blending_lambda_name
-  backend_ecs_cluster_name     = module.ecs.backend_ecs_cluster_name
-  backend_ecs_service_name     = module.ecs.backend_ecs_service_name
-}
+#   project_name         = var.project_name
+#   aws_region           = var.aws_region
+#   frontend_bucket_arn  = module.s3.frontend_bucket_arn
+#   frontend_bucket_name = module.s3.frontend_bucket
+#   tiling_lambda_name   = module.lambda.tiling_lambda_name
+#   clipping_lambda_name = module.lambda.clipping_lambda_name
+#   blending_lambda_name = module.lambda.blending_lambda_name
+#   backend_ecs_cluster_name     = module.ecs.backend_ecs_cluster_name
+#   backend_ecs_service_name     = module.ecs.backend_ecs_service_name
+# }

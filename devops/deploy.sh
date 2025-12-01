@@ -5,14 +5,19 @@ aws ecr get-login-password --region ap-southeast-2 | \
   docker login --username AWS --password-stdin 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com
 
 # Build Docker image ( Very important if build from Mac M chip)
-docker buildx build --platform linux/amd64 -f ../backend/Dockerfile.prod -t tilelens ../backend --load
+docker buildx build --platform linux/amd64 -f ../backend/Dockerfile.prod -t tilelens/backend ../backend --load
+docker tag tilelens/backend:latest 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens/backend:latest
+docker push 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens/backend:latest
 
-# Tag and push
-docker tag tilelens:latest 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens:latest
-docker push 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens:latest
+docker buildx build --platform linux/amd64 -f ../worker/transcriber/Dockerfile -t tilelens/transcriber ../worker/transcriber --load
+docker tag tilelens/transcriber:latest 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens/transcriber:latest
+docker push 058264550947.dkr.ecr.ap-southeast-2.amazonaws.com/tilelens/transcriber:latest
 
 # Build and Zip Lambdas
-cd ../worker/clipping_image/
+cd ../worker/msk_topic_creator/
+./build.sh
+
+cd ../clipping_image/
 ./build.sh
 
 cd ../tiling_image/
